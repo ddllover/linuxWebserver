@@ -119,7 +119,6 @@ public:
         }
         item = deq_.front();
         deq_.pop_front();
-        condConsumer_.notify_one();
         condProducer_.notify_one();
         return true;
     }
@@ -140,7 +139,6 @@ public:
         }
         item = deq_.front();
         deq_.pop_front();
-        condConsumer_.notify_one();
         condProducer_.notify_one();
         return true;
     }

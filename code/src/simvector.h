@@ -22,7 +22,7 @@ public:
     T &operator[](int i)
     {
         assert(i >= 0 && i <= size_);
-        return data_[i];
+        return *(data_+i);
     }
     T *begin()
     {
@@ -50,7 +50,7 @@ public:
     { //容器至少比size，并非是size
         if (capacity_ > size)
             return;
-        
+        printf("reserve\n");
         T *tmp = (T *)realloc(data_, (size + 1024) * sizeof(T));
         if(tmp) data_=tmp;
         else free(data_);

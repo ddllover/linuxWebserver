@@ -22,7 +22,7 @@
 #include "../pool/threadpool.h"
 #include "../pool/sqlconnRAII.h"
 #include "../http/httpconn.h"
-
+#include "../src/epoll.h"
 class WebServer {
 public:
     WebServer(
@@ -67,7 +67,7 @@ private:
    
     std::unique_ptr<HeapTimer> timer_;
     std::unique_ptr<ThreadPool> threadpool_;
-    std::unique_ptr<Epoller> epoller_;
+    std::unique_ptr<Epoll> epoller_;
     std::unordered_map<int, HttpConn> users_;
 };
 

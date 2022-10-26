@@ -14,7 +14,7 @@ WebServer::WebServer(
             const char* dbName, int connPoolNum, int threadNum,
             bool openLog, int logLevel, int logQueSize):
             port_(port), openLinger_(OptLinger), timeoutMS_(timeoutMS), isClose_(false), 
-            timer_(new HeapTimer()), threadpool_(new ThreadPool(threadNum)), epoller_(new Epoller()) 
+            timer_(new HeapTimer()), threadpool_(new ThreadPool(threadNum)), epoller_(new Epoll()) 
     {
     srcDir_ = getcwd(nullptr, 256);
     assert(srcDir_);
@@ -81,11 +81,10 @@ void WebServer::Start() {
         if(timeoutMS_ > 0) {
             timeMS = timer_->GetNextTick();
         }
-        int eventCnt = epoller_->Wait(timeMS);
-        for(int i = 0; i < eventCnt; i++) {
-            /* 处理事件 */
-            int fd = epoller_->GetEventFd(i);
-            uint32_t events = epoller_->GetEvents(i);
+        auto eventret = epoller_->Wait(timeMS);
+        for(int i=0;i<eventret.size();i++){
+            int fd = eventret[i].data.fd;
+            uint32_t events = eventret[i].events;
             if(fd == listenFd_) {
                 DealListen_();
             }
