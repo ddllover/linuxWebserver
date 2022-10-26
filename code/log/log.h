@@ -14,7 +14,7 @@
 #include <stdarg.h>           // vastart va_end
 #include <assert.h>
 #include <sys/stat.h>         //mkdir
-#include "blockqueue.h"
+#include "../src/safedeque.h"
 #include "../buffer/buffer.h"
 
 class Log {
@@ -59,7 +59,7 @@ private:
     bool isAsync_;
 
     FILE* fp_;
-    std::unique_ptr<BlockDeque<std::string>> deque_; 
+    std::unique_ptr<SafeDeque<std::string>> deque_; 
     std::unique_ptr<std::thread> writeThread_;
     std::mutex mtx_;
 };
