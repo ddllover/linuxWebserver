@@ -2,22 +2,28 @@
 #include <iostream>
 #include <assert.h>
 #include <cstring>
-// 由于是作为存储空间使用，不需要构造函数
 template <typename T>
-class SimVector //一个保证capacity_>size 即left不为0 且不使用构造函数的容器
-{
-private:
-    int capacity_;
+class SimVector             //1.保证申请的内存是干净的
+{                           //2.capacity_>size 即left不为0，
+private:                    //3.可以利用mark建立标记
+    int *mark_=nullptr;     //4.不提供对已经申请的做任何操作
+    int capacity_;          //5.目前不打算提供缩小空间的操作
     int size_;
     T *data_=nullptr;
-
 public:
-    SimVector(int capacity = 0) : capacity_(capacity), size_(0)
-    {
+    SimVector(int capacity = 0,int marknum=0) : capacity_(capacity), size_(0)
+    {   
+        if(marknum!=0){
+            mark_=new int[marknum];
+            memset(mark_,0,marknum*sizeof(int));
+        }
         if (capacity_ != 0){
             printf("SimVector 构造\n");
             data_ = (T *)calloc(capacity_ , sizeof(T));
         }
+    }
+    int & Mark(int i){
+        return mark_[i];
     }
     T &operator[](int i)
     {
@@ -32,28 +38,28 @@ public:
     {
         return data_ + size_;
     }
-    void erase(int begin, int end) 
+    /*void erase(int begin, int end) 
     {
         assert(begin <= end && begin >= 0 && end<=size_);
         if(begin!=end)
         memcpy(data_+begin, data_ + end, (size_ - end) * sizeof(T));
         size_=size_-(end-begin);
-        memset(data_+size_,0,(capacity_-size_)*sizeof(T));
-    }
-    void append(T *begin, int len)
+        //memset(data_+size_,0,(capacity_-size_)*sizeof(T));
+    }*/
+    /*void append(T *begin, int len)
     {
         reserve(size_ + len);
         memcpy(data_ + size_, begin, len * sizeof(T));
         size_ = size_ + len;
-    }
+    }*/     
     void reserve(int size)  //只动capacity_
     { //容器至少比size，并非是size
         if (capacity_ > size)
             return;
         printf("reserve\n");
-        T *tmp = (T *)realloc(data_, (size + 1024) * sizeof(T));
+        T *data_ = (T *)realloc(data_, (size + 1024) * sizeof(T));
         if(tmp) data_=tmp;
-        else free(data_);
+        else {free(data_);perror("realloc error ");}
         memset(data_+size_,0,(size + 1024-capacity_)*sizeof(T));
         capacity_ = size + 1024; //每次多预留2048空间
     }
@@ -82,5 +88,5 @@ public:
     {
         return data_;
     }
-    ~SimVector() { /*free(data_); */}
+    ~SimVector() {if(data_) free(data_);}
 };

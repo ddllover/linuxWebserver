@@ -48,7 +48,7 @@ private:
 
     private:
         int id;           //工作id
-        ThreadPool *pool; //所属线程池
+        ThreadPool *pool=nullptr; //所属线程池
     public:
         ThreadWorker(ThreadPool *pool, const int id) : pool(pool), id(id) {}
         void operator()()

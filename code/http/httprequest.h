@@ -23,7 +23,6 @@ public:
     enum PARSE_STATE {
         REQUEST_LINE,
         HEADERS,
-        BODY,
         FINISH,        
     };
 
@@ -60,9 +59,9 @@ public:
     */
 
 private:
-    bool ParseRequestLine_(Buffer& line);
-    void ParseHeader_(Buffer& line);
-    void ParseBody_(Buffer& line);
+    bool ParseRequestLine_(Buffer& buff);
+    bool ParseHeader_(Buffer& buff);
+    bool ParseBody_(Buffer& buff);
 
     void ParsePath_();
     void ParsePost_();
@@ -70,14 +69,13 @@ private:
 
     static bool UserVerify(const std::string& name, const std::string& pwd, bool isLogin);
 
-    PARSE_STATE state_;
+    int state_;
     std::string method_, path_, version_, body_;
     std::unordered_map<std::string, std::string> header_;
     std::unordered_map<std::string, std::string> post_;
 
     static const std::unordered_set<std::string> DEFAULT_HTML;
     static const std::unordered_map<std::string, int> DEFAULT_HTML_TAG;
-    static int ConverHex(char ch);
 };
 
 

@@ -34,6 +34,7 @@ void Buffer::RetrieveUntil(const char* end) {
 
 void Buffer::RetrieveAll() {
     bzero(&buffer_[0], buffer_.size());
+    buffer_.clear();
     readPos_ = 0;
     writePos_ = 0;
 }
@@ -135,6 +136,7 @@ void Buffer::MakeSpace_(size_t len) {
         std::copy(BeginPtr_() + readPos_, BeginPtr_() + writePos_, BeginPtr_());
         readPos_ = 0;
         writePos_ = readPos_ + readable;
+        bzero(BeginPtr_()+writePos_,WritableBytes());
         assert(readable == ReadableBytes());
     }
 }
