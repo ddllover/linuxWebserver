@@ -46,3 +46,6 @@ const unordered_map<int, string> HttpConn::CODE_PATH = {
     {403, "/403.html"},
     {404, "/404.html"},
 };
+const char* HttpConn::srcDir;
+std::atomic<int> HttpConn::userCount;
+bool HttpConn::isET;

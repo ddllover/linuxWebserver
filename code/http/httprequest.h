@@ -60,9 +60,9 @@ public:
     */
 
 private:
-    bool ParseRequestLine_(const std::string& line);
-    void ParseHeader_(const std::string& line);
-    void ParseBody_(const std::string& line);
+    bool ParseRequestLine_(Buffer& line);
+    void ParseHeader_(Buffer& line);
+    void ParseBody_(Buffer& line);
 
     void ParsePath_();
     void ParsePost_();

@@ -13,18 +13,19 @@
 #include <unistd.h>      // close
 #include <sys/stat.h>    // stat
 #include <sys/mman.h>    // mmap, munmap
-
 #include "../log/log.h"
 #include "../pool/sqlconnRAII.h"
 #include "../buffer/buffer.h"
-//#include "httprequest.h"
-//#include "httpresponse.h"
+
 using namespace std;
 class HttpConn
 {
 private:
     const static std::unordered_set<std::string> DEFAULT_HTML;
     const static std::unordered_map<std::string, int> DEFAULT_HTML_TAG;
+    const static  std::unordered_map<std::string, std::string> SUFFIX_TYPE;
+    const static  std::unordered_map<int, std::string> CODE_STATUS;
+    const static  std::unordered_map<int, std::string> CODE_PATH;
     enum PARSE_STATE
     {
         REQUEST_LINE,
@@ -43,10 +44,6 @@ private:
         INTERNAL_ERROR,
         CLOSED_CONNECTION,
     };
-    static const std::unordered_map<std::string, std::string> SUFFIX_TYPE;
-    static const std::unordered_map<int, std::string> CODE_STATUS;
-    static const std::unordered_map<int, std::string> CODE_PATH;
-
     int code_;
     bool isKeepAlive_;
 
@@ -66,9 +63,6 @@ private:
 
     Buffer readBuff_;  // 读缓冲区
     Buffer writeBuff_; // 写缓冲区
-
-    // HttpRequest request_;
-    // HttpResponse response_;
     PARSE_STATE state_;
     std::string method_, path_, version_, body_;
     std::unordered_map<std::string, std::string> header_;

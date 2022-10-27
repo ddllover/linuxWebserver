@@ -28,35 +28,36 @@ bool HttpRequest::IsKeepAlive() const {
 }
 
 bool HttpRequest::parse(Buffer& buff) {
-    const char CRLF[] = "\r\n";
+    
     if(buff.ReadableBytes() <= 0) {
         return false;
     }
     while(buff.ReadableBytes() && state_ != FINISH) {
-        const char* lineEnd = search(buff.Peek(), buff.BeginWriteConst(), CRLF, CRLF + 2);
-        std::string line(buff.Peek(), lineEnd);
+        //const char* lineEnd = search(buff.Peek(), buff.BeginWriteConst(), CRLF, CRLF + 2);
+        //std::string line(buff.Peek(), lineEnd);
         switch(state_)
         {
         case REQUEST_LINE:
-            if(!ParseRequestLine_(line)) {
+            if(!ParseRequestLine_(buff)) {
                 return false;
             }
             ParsePath_();
             break;    
         case HEADERS:
-            ParseHeader_(line);
+            ParseHeader_(buff);
             if(buff.ReadableBytes() <= 2) {
                 state_ = FINISH;
             }
             break;
         case BODY:
-            ParseBody_(line);
+            ParseBody_(buff);
             break;
         default:
             break;
         }
-        if(lineEnd == buff.BeginWrite()) { break; }
-        buff.RetrieveUntil(lineEnd + 2);
+        //if(lineEnd == buff.BeginWrite()) { break; }
+        //buff.Retrieve();
+        //buff.RetrieveUntil(lineEnd + 2);
     }
     LOG_DEBUG("[%s], [%s], [%s]", method_.c_str(), path_.c_str(), version_.c_str());
     return true;
@@ -76,10 +77,11 @@ void HttpRequest::ParsePath_() {
     }
 }
 
-bool HttpRequest::ParseRequestLine_(const string& line) {
-    regex patten("^([^ ]*) ([^ ]*) HTTP/([^ ]*)$");
-    smatch subMatch;
-    if(regex_match(line, subMatch, patten)) {   
+bool HttpRequest::ParseRequestLine_(Buffer& line) {
+    regex patten("^([^ \r\n]*) ([^ \r\n]*) HTTP/([^ \r\n]*)\r\n");
+    cmatch subMatch;
+    if(regex_search(line.Peek(), subMatch, patten)) {   
+        line.Retrieve(subMatch.length());
         method_ = subMatch[1];
         path_ = subMatch[2];
         version_ = subMatch[3];
@@ -90,10 +92,11 @@ bool HttpRequest::ParseRequestLine_(const string& line) {
     return false;
 }
 
-void HttpRequest::ParseHeader_(const string& line) {
-    regex patten("^([^:]*): ?(.*)$");
-    smatch subMatch;
-    if(regex_match(line, subMatch, patten)) {
+void HttpRequest::ParseHeader_(Buffer& line) {
+    regex patten("^([^:\r\n]*): ?([^\r\n]*)\r\n");
+    cmatch subMatch;
+    if(regex_search(line.Peek(), subMatch, patten)) {
+        line.Retrieve(subMatch.length());
         header_[subMatch[1]] = subMatch[2];
     }
     else {
@@ -101,20 +104,10 @@ void HttpRequest::ParseHeader_(const string& line) {
     }
 }
 
-void HttpRequest::ParseBody_(const string& line) {
-    body_ = line;
-    ParsePost_();
-    state_ = FINISH;
-    LOG_DEBUG("Body:%s, len:%d", line.c_str(), line.size());
-}
-
-int HttpRequest::ConverHex(char ch) {
-    if(ch >= 'A' && ch <= 'F') return ch -'A' + 10;
-    if(ch >= 'a' && ch <= 'f') return ch -'a' + 10;
-    return ch;
-}
-
-void HttpRequest::ParsePost_() {
+void HttpRequest::ParseBody_(Buffer& line) {
+    const char CRLF[] = "\r\n";
+    const char* lineEnd = search(line.Peek(), line.BeginWriteConst(), CRLF, CRLF + 2);
+    body_=string(line.Peek(), lineEnd);
     if(method_ == "POST" && header_["Content-Type"] == "application/x-www-form-urlencoded") {
         ParseFromUrlencoded_();
         if(DEFAULT_HTML_TAG.count(path_)) {
@@ -131,6 +124,18 @@ void HttpRequest::ParsePost_() {
             }
         }
     }   
+    state_ = FINISH;
+    LOG_DEBUG("Body:%s, len:%d", body_.c_str(), body_.size());
+}
+
+int HttpRequest::ConverHex(char ch) {
+    if(ch >= 'A' && ch <= 'F') return ch -'A' + 10;
+    if(ch >= 'a' && ch <= 'f') return ch -'a' + 10;
+    return ch;
+}
+
+void HttpRequest::ParsePost_() {
+    
 }
 
 void HttpRequest::ParseFromUrlencoded_() {
