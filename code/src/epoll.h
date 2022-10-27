@@ -16,7 +16,7 @@ private:
     int epfd_;
     // int fdCnt; //需要维护线程安全的先删除
     SimVector<struct epoll_event> events_; //注意线程不安全的
-    epoll_event ev;
+    
     //uint32_t events_;
     //int listenEvent_ = EPOLLRDHUP;
     //int connEvent_ = EPOLLONESHOT | EPOLLRDHUP;
@@ -30,7 +30,7 @@ public:
     bool AddFd(int fd, uint32_t events, int flag = 0)
     { //增加的一个事件作为等读取对面的请求
         if(fd<0) return false;
-         ev= {0};
+        epoll_event ev= {0};
         ev.data.fd = fd;
         ev.events = events;
         if (epoll_ctl(epfd_, EPOLL_CTL_ADD, fd, &ev) < 0)
@@ -44,7 +44,7 @@ public:
     bool ModFd(int fd, uint32_t events)
     {
         if(fd<0) return false;
-        ev = {0};
+        epoll_event ev= {0};
         ev.data.fd = fd;
         ev.events = events;
         if (epoll_ctl(epfd_, EPOLL_CTL_MOD, fd, &ev) < 0)
@@ -58,7 +58,8 @@ public:
     bool DelFd(int fd)
     {
         if(fd<0) return false;
-        ev = {0};
+        epoll_event ev = {0};
+        //ev.data.fd=fd;
         if (epoll_ctl(epfd_, EPOLL_CTL_DEL, fd, &ev) < 0)
         {
             perror("delfd error");

@@ -56,7 +56,6 @@ bool HttpRequest::parse(Buffer& buff) {
             break;
         }
         //if(lineEnd == buff.BeginWrite()) { break; }
-        //buff.Retrieve();
         //buff.RetrieveUntil(lineEnd + 2);
     }
     LOG_DEBUG("[%s], [%s], [%s]", method_.c_str(), path_.c_str(), version_.c_str());
@@ -78,13 +77,14 @@ void HttpRequest::ParsePath_() {
 }
 
 bool HttpRequest::ParseRequestLine_(Buffer& line) {
-    regex patten("^([^ \r\n]*) ([^ \r\n]*) HTTP/([^ \r\n]*)\r\n");
+    //找到一个http
+     static regex patten("^([^ \r\n]*) ([^ \r\n]*) HTTP/([^ \r\n]*)\r\n");
     cmatch subMatch;
     if(regex_search(line.Peek(), subMatch, patten)) {   
         line.Retrieve(subMatch.length());
-        method_ = subMatch[1];
-        path_ = subMatch[2];
-        version_ = subMatch[3];
+        method_ = subMatch[1].str();
+        path_ = subMatch[2].str();
+        version_ = subMatch[3].str();
         state_ = HEADERS;
         return true;
     }
@@ -93,11 +93,11 @@ bool HttpRequest::ParseRequestLine_(Buffer& line) {
 }
 
 void HttpRequest::ParseHeader_(Buffer& line) {
-    regex patten("^([^:\r\n]*): ?([^\r\n]*)\r\n");
+     static regex patten("^([^:\r\n]*): ?([^\r\n]*)\r\n");
     cmatch subMatch;
     if(regex_search(line.Peek(), subMatch, patten)) {
         line.Retrieve(subMatch.length());
-        header_[subMatch[1]] = subMatch[2];
+        header_[subMatch[1].str()] = subMatch[2].str();
     }
     else {
         state_ = BODY;
@@ -105,9 +105,12 @@ void HttpRequest::ParseHeader_(Buffer& line) {
 }
 
 void HttpRequest::ParseBody_(Buffer& line) {
-    const char CRLF[] = "\r\n";
-    const char* lineEnd = search(line.Peek(), line.BeginWriteConst(), CRLF, CRLF + 2);
-    body_=string(line.Peek(), lineEnd);
+     static regex patten("^([^\r\n]*)\r\n");
+    cmatch subMatch;
+    if(regex_search(line.Peek(), subMatch, patten)){
+        line.Retrieve(subMatch.length());
+        body_=subMatch[1].str();
+    }
     if(method_ == "POST" && header_["Content-Type"] == "application/x-www-form-urlencoded") {
         ParseFromUrlencoded_();
         if(DEFAULT_HTML_TAG.count(path_)) {
