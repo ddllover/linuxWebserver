@@ -13,6 +13,7 @@
 #include <errno.h>     
 #include <mysql/mysql.h>  //mysql
 
+#include "../src/simvector.h"
 #include "../buffer/buffer.h"
 #include "../log/log.h"
 #include "../pool/sqlconnpool.h"
@@ -41,7 +42,7 @@ public:
     ~HttpRequest() = default;
 
     void Init();
-    bool parse(Buffer& buff);
+    bool parse(Buff& buff);
 
     std::string path() const;
     std::string& path();
@@ -59,9 +60,9 @@ public:
     */
 
 private:
-    bool ParseRequestLine_(Buffer& buff);
-    bool ParseHeader_(Buffer& buff);
-    bool ParseBody_(Buffer& buff);
+    bool ParseRequestLine_(Buff& buff);
+    bool ParseHeader_(Buff& buff);
+    bool ParseBody_(Buff& buff);
 
     void ParsePath_();
     void ParsePost_();

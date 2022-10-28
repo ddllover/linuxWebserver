@@ -22,17 +22,17 @@ const char* Buffer::Peek() const {
     return BeginPtr_() + readPos_;
 }
 
-void Buffer::Retrieve(size_t len) {
+void Buffer::PeekAdd(size_t len) {
     assert(len <= ReadableBytes());
     readPos_ += len;
 }
 
 void Buffer::RetrieveUntil(const char* end) {
     assert(Peek() <= end );
-    Retrieve(end - Peek());
+    PeekAdd(end - Peek());
 }
 
-void Buffer::RetrieveAll() {
+void Buffer::clear() {
     bzero(&buffer_[0], buffer_.size());
     buffer_.clear();
     readPos_ = 0;
@@ -41,7 +41,7 @@ void Buffer::RetrieveAll() {
 
 std::string Buffer::RetrieveAllToStr() {
     std::string str(Peek(), ReadableBytes());
-    RetrieveAll();
+    clear();
     return str;
 }
 

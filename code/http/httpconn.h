@@ -13,6 +13,7 @@
 #include <stdlib.h>      // atoi()
 #include <errno.h>      
 
+#include "../src/simvector.h"
 #include "../log/log.h"
 #include "../pool/sqlconnRAII.h"
 #include "../buffer/buffer.h"
@@ -41,7 +42,7 @@ public:
     
     sockaddr_in GetAddr() const;
     
-    bool process();
+    bool ReadAndMake();
 
     int ToWriteBytes() { 
         return iov_[0].iov_len + iov_[1].iov_len; 
@@ -65,7 +66,7 @@ private:
     int iovCnt_;
     struct iovec iov_[2];
     
-    Buffer readBuff_; // 读缓冲区
+    Buff readBuff_; // 读缓冲区
     Buffer writeBuff_; // 写缓冲区
 
     HttpRequest request_;

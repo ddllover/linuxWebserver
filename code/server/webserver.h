@@ -36,16 +36,16 @@ public:
     void Start();
 
 private:
-    void InitSocket_(); 
     void InitEventMode_(int trigMode);
     void AddClient_(int fd, sockaddr_in addr);
   
     void ClientAccept();
     void ClientWri(HttpConn* client);
     void ClientRcv(HttpConn* client);
+    void ClientClose(HttpConn* client);
 
     void SendError_(int fd, const char*info);
-    void ClientClose(HttpConn* client);
+
 
     void OnRead_(HttpConn* client);
     void OnWrite_(HttpConn* client);

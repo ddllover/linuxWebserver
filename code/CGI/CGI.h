@@ -449,8 +449,8 @@ public:
         userCount++;
         addr_ = addr;
         fd_ = fd;
-        writeBuff_.RetrieveAll();
-        readBuff_.RetrieveAll();
+        writeBuff_.clear();
+        readBuff_.clear();
         isClose_ = false;
         // void Init()
         {
@@ -502,7 +502,7 @@ public:
                 iov_[1].iov_len -= (len - iov_[0].iov_len);
                 if (iov_[0].iov_len)
                 {
-                    writeBuff_.RetrieveAll();
+                    writeBuff_.clear();
                     iov_[0].iov_len = 0;
                 }
             }
@@ -510,12 +510,12 @@ public:
             {
                 iov_[0].iov_base = (uint8_t *)iov_[0].iov_base + len;
                 iov_[0].iov_len -= len;
-                writeBuff_.Retrieve(len);
+                writeBuff_.PeekAdd(len);
             }
         } while (isET || ToWriteBytes() > 10240);
         return len;
     }
-    bool process()
+    bool ReadAndMake()
     {
         // request_.Init();
         if (readBuff_.ReadableBytes() <= 0)

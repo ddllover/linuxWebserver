@@ -37,18 +37,18 @@ bool HttpRequest::IsKeepAlive() const
     return false;
 }
 
-bool HttpRequest::parse(Buffer &buff)
+bool HttpRequest::parse(Buff &buff)
 {
     return ParseRequestLine_(buff);
 }
 
-bool HttpRequest::ParseRequestLine_(Buffer &buff)
+bool HttpRequest::ParseRequestLine_(Buff &buff)
 {   if(REQUEST_LINE != state_) return ParseHeader_(buff);
     static regex patten("^([^ \r\n]*) ([^ \r\n]*) HTTP/([^ \r\n]*)\r\n");
     cmatch subMatch;
     if (regex_search(buff.Peek(), subMatch, patten))
     {
-        buff.Retrieve(subMatch.length());
+        buff.PeekAdd(subMatch.length());
         method_ = subMatch[1].str();
         path_ = subMatch[2].str();
         version_ = subMatch[3].str();
@@ -69,25 +69,25 @@ bool HttpRequest::ParseRequestLine_(Buffer &buff)
     return false;
 }
 
-bool HttpRequest::ParseHeader_(Buffer &buff)
+bool HttpRequest::ParseHeader_(Buff &buff)
 {
     static regex patten("^([^:\r\n]*): ?([^\r\n]*)\r\n");
     cmatch subMatch;
     while (regex_search(buff.Peek(), subMatch, patten)) //
     {
-        buff.Retrieve(subMatch.length());
+        buff.PeekAdd(subMatch.length());
         header_[subMatch[1].str()] = subMatch[2].str();
     }
     return ParseBody_(buff);
 }
 
-bool HttpRequest::ParseBody_(Buffer &buff)
+bool HttpRequest::ParseBody_(Buff &buff)
 {
     static regex patten("^([^\r\n]*)\r\n");
     cmatch subMatch;
     if (regex_search(buff.Peek(), subMatch, patten))
     {
-        buff.Retrieve(subMatch.length());
+        buff.PeekAdd(subMatch.length());
         body_ = subMatch[1].str();
     }
     else{

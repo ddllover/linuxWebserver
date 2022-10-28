@@ -72,7 +72,7 @@ void Log::init(int level = 1, const char* path, const char* suffix,
 
     {
         lock_guard<mutex> locker(mtx_);
-        buff_.RetrieveAll();
+        buff_.clear();
         if(fp_) { 
             flush();
             fclose(fp_); 
@@ -144,7 +144,7 @@ void Log::write(int level, const char *format, ...) {
         } else {
             fputs(buff_.Peek(), fp_);
         }
-        buff_.RetrieveAll();
+        buff_.clear();
     }
 }
 

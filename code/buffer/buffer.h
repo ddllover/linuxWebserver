@@ -26,10 +26,10 @@ public:
     void EnsureWriteable(size_t len);
     void HasWritten(size_t len);
 
-    void Retrieve(size_t len);
+    void PeekAdd(size_t len);
     void RetrieveUntil(const char* end);
 
-    void RetrieveAll() ;
+    void clear() ;
     std::string RetrieveAllToStr();
 
     const char* BeginWriteConst() const;

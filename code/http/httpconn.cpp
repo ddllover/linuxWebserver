@@ -28,8 +28,8 @@ void HttpConn::init(int fd, const sockaddr_in &addr)
     userCount++;
     addr_ = addr;
     fd_ = fd;
-    writeBuff_.RetrieveAll();
-    readBuff_.RetrieveAll();
+    writeBuff_.clear();
+    readBuff_.clear();
     isClose_ = false;
     LOG_INFO("Client[%d](%s:%d) in, userCount:%d", fd_, GetIP(), GetPort(), (int)userCount);
 }
@@ -101,7 +101,7 @@ ssize_t HttpConn::write(int *saveErrno)
             iov_[1].iov_len -= (len - iov_[0].iov_len);
             if (iov_[0].iov_len)
             {
-                writeBuff_.RetrieveAll();
+                writeBuff_.clear();
                 iov_[0].iov_len = 0;
             }
         }
@@ -109,20 +109,19 @@ ssize_t HttpConn::write(int *saveErrno)
         {
             iov_[0].iov_base = (uint8_t *)iov_[0].iov_base + len;
             iov_[0].iov_len -= len;
-            writeBuff_.Retrieve(len);
+            writeBuff_.PeekAdd(len);
         }
     } while (isET || ToWriteBytes() > 10240);
     return len;
 }
 
-bool HttpConn::process()
+bool HttpConn::ReadAndMake()
 {
     if (false == request_.parse(readBuff_))
         return false;
 
     LOG_DEBUG("%s", request_.path().c_str());
     response_.Init(srcDir, request_.path(), request_.IsKeepAlive(), 200);
-    request_.Init();
     response_.MakeResponse(writeBuff_);
     /* 响应头 */
     iov_[0].iov_base = const_cast<char *>(writeBuff_.Peek());
@@ -137,5 +136,8 @@ bool HttpConn::process()
         iovCnt_ = 2;
     }
     LOG_DEBUG("filesize:%d, %d  to %d", response_.FileLen(), iovCnt_, ToWriteBytes());
+
+    request_.Init();
+    readBuff_.TryEarsePeek();
     return true;
 }

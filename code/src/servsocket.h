@@ -20,7 +20,7 @@ private:
     struct sockaddr_in servIpv4_; // 专用于ipv4的地址方便查询 sockaddr通用的
 public:
     ServSocket() = delete;
-    ServSocket(std::string ipv4, std::string port, int _domain = AF_INET, int _type = SOCK_STREAM, int _prpotocol = IPPROTO_TCP)
+    ServSocket(std::string ipv4, std::string port,int listen_size = 6, int _domain = AF_INET, int _type = SOCK_STREAM, int _prpotocol = IPPROTO_TCP)
     {
         /*地址族ipv4*/ /*套接字类型，面向连接*/ /*传输协议 TCP*/
         servIpv4_.sin_family = _domain;                            // 使用IPv4地址
@@ -33,7 +33,7 @@ public:
             perror("listen error ");
             assert(servSocket_ >=0);
         }
-        assert(std::stoi(port) > 65535 && std::stoi(port) < 1024);
+        assert(std::stoi(port) <= 65535 && std::stoi(port) >=1024);
         // ？？？关闭连接相关
         struct linger optLinger = {0};
         // optLinger.l_onoff = 1;
@@ -42,15 +42,8 @@ public:
         // 端口复用
         int optval = 1;
         setsockopt(servSocket_, SOL_SOCKET, SO_REUSEADDR, (const void *)&optval, sizeof(int));
-        // fcntl(servSocket_, F_SETFL, fcntl(servSocket_, F_GETFL, 0) | O_NONBLOCK);
-    }
-    void Bind()
-    {
         assert(bind(servSocket_, reinterpret_cast<struct sockaddr *>(&servIpv4_), sizeof(servIpv4_)) >= -1);
-    }
-    void Listen(int size = 6)
-    {
-        if (listen(servSocket_, size) < 0)
+        if (listen(servSocket_, listen_size) < 0)
             perror("listen\n");
     }
     int Accept(struct sockaddr_in *clientIpv4 = nullptr)
@@ -64,9 +57,7 @@ public:
         if (clientSocket < 0)
         {
             // perror("client accept");
-            return clientSocket;
         }
-        // fcntl(clientSocket, F_SETFL, fcntl(clientSocket, F_GETFL, 0) | O_NONBLOCK);
         return clientSocket;
     }
     int getSocket() const { return servSocket_; }
