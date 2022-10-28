@@ -81,7 +81,7 @@ void WebServer::Start() {
         if(timeoutMS_ > 0) {
             timeMS = timer_->GetNextTick();
         }
-        auto eventret = epoller_->Wait(timeMS);
+        const auto &eventret = epoller_->Wait(timeMS);
         for(int i=0;i<eventret.size();i++){
             int fd = eventret[i].data.fd;
             uint32_t events = eventret[i].events;

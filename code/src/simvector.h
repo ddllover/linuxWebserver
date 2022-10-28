@@ -8,8 +8,8 @@ class SimVector             //1.保证申请的内存是干净的
 private:                    //3.可以利用mark建立标记
     int *mark_=nullptr;     //4.不提供对已经申请的做任何操作
     int capacity_;          //5.目前不打算提供缩小空间的操作
-    int size_;
-    T *data_=nullptr;
+    int size_;              //6.对象是完全独立的的，只能使用指针或者引用
+    T *data_=nullptr;     
 public:
     SimVector(int capacity = 0,int marknum=0) : capacity_(capacity), size_(0)
     {   
@@ -22,10 +22,14 @@ public:
             data_ = (T *)calloc(capacity_ , sizeof(T));
         }
     }
+    SimVector(const SimVector&)=delete;  //unique_
+    SimVector(SimVector&&)=delete;
+    SimVector &operator=(const SimVector&)=delete;
+    SimVector &operator=(SimVector&&)=delete;
     int & Mark(int i){
         return mark_[i];
     }
-    T &operator[](int i)
+    T operator[](int i)const
     {
         assert(i >= 0 && i <= size_);
         return *(data_+i);
@@ -57,11 +61,11 @@ public:
         if (capacity_ > size)
             return;
         printf("reserve\n");
-        T *data_ = (T *)realloc(data_, (size + 1024) * sizeof(T));
+        T *tmp = (T *)realloc(data_, (size + 2048) * sizeof(T));
         if(tmp) data_=tmp;
         else {free(data_);perror("realloc error ");}
-        memset(data_+size_,0,(size + 1024-capacity_)*sizeof(T));
-        capacity_ = size + 1024; //每次多预留2048空间
+        memset(data_+size_,0,(size + 2048-capacity_)*sizeof(T));
+        capacity_ = size + 2048; //每次多预留2048空间
     }
     void resize(int size)  //只动 size_ 和capacity_
     {   
@@ -88,5 +92,5 @@ public:
     {
         return data_;
     }
-    ~SimVector() {if(data_) free(data_);}
+    ~SimVector() {if(data_) free(data_);if(mark_) delete [] mark_;}
 };
