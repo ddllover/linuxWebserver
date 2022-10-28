@@ -21,9 +21,9 @@ int main(int args, char *argv[]) {
     }
     
     WebServer server(
-        1234, 3, 60000, false,             /* 端口 ET模式 timeoutMs 优雅退出  */
+        1234, 3, 1000, false,             /* 端口 ET模式 timeoutMs 优雅退出  */
         3306, "root", "", "yourdb", /* Mysql配置 */
-        6, 8, flag, 1, i);             /* 连接池数量 线程池数量 日志开关 日志等级 日志异步队列容量 */
+        6, 8, flag, 1, 1024);             /* 连接池数量 线程池数量 日志开关 日志等级 日志异步队列容量 */
     server.Start();
 } 
   

@@ -23,6 +23,7 @@
 #include "../http/httpconn.h"
 //#include "../CGI/CGI.h"
 #include "../src/epoll.h"
+#include "../src/servsocket.h"
 class WebServer {
 public:
     WebServer(
@@ -35,17 +36,16 @@ public:
     void Start();
 
 private:
-    bool InitSocket_(); 
+    void InitSocket_(); 
     void InitEventMode_(int trigMode);
     void AddClient_(int fd, sockaddr_in addr);
   
-    void DealListen_();
-    void DealWrite_(HttpConn* client);
-    void DealRead_(HttpConn* client);
+    void ClientAccept();
+    void ClientWri(HttpConn* client);
+    void ClientRcv(HttpConn* client);
 
     void SendError_(int fd, const char*info);
-    void ExtentTime_(HttpConn* client);
-    void CloseConn_(HttpConn* client);
+    void ClientClose(HttpConn* client);
 
     void OnRead_(HttpConn* client);
     void OnWrite_(HttpConn* client);
@@ -59,7 +59,6 @@ private:
     bool openLinger_;
     int timeoutMS_;  /* 毫秒MS */
     bool isClose_;
-    int listenFd_;
     char* srcDir_;
     
     uint32_t listenEvent_;
@@ -68,6 +67,7 @@ private:
     std::unique_ptr<HeapTimer> timer_;
     std::unique_ptr<ThreadPool> threadpool_;
     std::unique_ptr<Epoll> epoller_;
+    std::unique_ptr<ServSocket> servsocket_;
     std::unordered_map<int, HttpConn> users_;
 };
 

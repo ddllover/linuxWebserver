@@ -27,7 +27,7 @@ public:
         epfd_ = epoll_create(epollnum);
         fcntl(epfd_, F_SETFL, fcntl(epfd_, F_GETFD, 0) | O_NONBLOCK);
     }
-    bool AddFd(int fd, uint32_t events, int flag = 0)
+    bool AddFd(int fd, uint32_t events)
     { //增加的一个事件作为等读取对面的请求
         if(fd<0) return false;
         epoll_event ev= {0};
@@ -38,6 +38,7 @@ public:
             perror("eoor");
             return false;
         }
+        fcntl(fd, F_SETFL, fcntl(fd, F_GETFD, 0) | O_NONBLOCK);
         return true;
     }
 
@@ -62,7 +63,7 @@ public:
         //ev.data.fd=fd;
         if (epoll_ctl(epfd_, EPOLL_CTL_DEL, fd, &ev) < 0)
         {
-            perror("delfd error");
+            //perror("delfd error");
             return false;
         }
         return true;
