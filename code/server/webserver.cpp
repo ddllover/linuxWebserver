@@ -139,10 +139,10 @@ void WebServer::SendError_(int fd, const char *info)
 }
 
 void WebServer::ClientAccept()
-{
+{   
+    struct sockaddr_in addr = {0};
     do
     {
-        struct sockaddr_in addr = {0};
         int fd = servsocket_->Accept(&addr);
         if (fd <= 0)
         {
@@ -196,8 +196,8 @@ void WebServer::OnRead_(HttpConn *client)
     assert(client);
     int ret = -1;
     int readErrno = 0;
-    ret = client->read(&readErrno);
-    if (ret <= 0 && readErrno != EAGAIN)
+    ret = client->Read(&readErrno);
+    if (ret < 0 && readErrno != EAGAIN) //Et可以异常返回
     {
         ClientClose(client);
         return;
@@ -217,23 +217,24 @@ void WebServer::OnWrite_(HttpConn *client)
     assert(client);
     int ret = -1;
     int writeErrno = 0;
-    ret = client->write(&writeErrno);
+    ret = client->Write(&writeErrno);
+    if(ret<0&&writeErrno != EAGAIN){ //Et可以异常返回
+        ClientClose(client);
+        return ;
+    }
     if (client->ToWriteBytes() == 0)
-    {
+    {   
         if (client->IsKeepAlive())
-        {
+        {   printf("not close  client\n");
             epoller_->ModFd(client->GetFd(), connEvent_ | EPOLLIN);
             return ;
         }
+        ClientClose(client);
     }
-    else if (ret < 0)
+    else 
     {
-        if (writeErrno == EAGAIN)//ET模式必须需要的选项
-        {
-            /* 继续传输 */
-            epoller_->ModFd(client->GetFd(), connEvent_ | EPOLLOUT);
-            return;
-        }
+        epoller_->ModFd(client->GetFd(), connEvent_ | EPOLLOUT);   
     }
-    ClientClose(client);
+
+    
 }

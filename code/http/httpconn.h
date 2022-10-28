@@ -16,7 +16,6 @@
 #include "../src/simvector.h"
 #include "../log/log.h"
 #include "../pool/sqlconnRAII.h"
-#include "../buffer/buffer.h"
 #include "httprequest.h"
 #include "httpresponse.h"
 
@@ -28,9 +27,9 @@ public:
 
     void init(int sockFd, const sockaddr_in& addr);
 
-    ssize_t read(int* saveErrno);
+    ssize_t Read(int* saveErrno);
 
-    ssize_t write(int* saveErrno);
+    ssize_t Write(int* saveErrno);
 
     void Close();
 
@@ -45,7 +44,7 @@ public:
     bool ReadAndMake();
 
     int ToWriteBytes() { 
-        return iov_[0].iov_len + iov_[1].iov_len; 
+        return sendFile_.size_+(sendBuff_.peekleft()); 
     }
 
     bool IsKeepAlive() const {
@@ -62,12 +61,15 @@ private:
     struct  sockaddr_in addr_;
 
     bool isClose_;
-    
-    int iovCnt_;
-    struct iovec iov_[2];
-    
-    Buff readBuff_; // 读缓冲区
-    Buffer writeBuff_; // 写缓冲区
+
+    struct file
+    {
+        char * data_;
+        int size_;
+    }sendFile_;
+    Buff rcvBuff_; // 读缓冲区
+    Buff sendBuff_; // 写缓冲区
+
 
     HttpRequest request_;
     HttpResponse response_;

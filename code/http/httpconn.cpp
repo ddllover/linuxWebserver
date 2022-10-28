@@ -1,8 +1,4 @@
-/*
- * @Author       : mark
- * @Date         : 2020-06-15
- * @copyleft Apache 2.0
- */
+
 #include "httpconn.h"
 using namespace std;
 
@@ -28,8 +24,10 @@ void HttpConn::init(int fd, const sockaddr_in &addr)
     userCount++;
     addr_ = addr;
     fd_ = fd;
-    writeBuff_.clear();
-    readBuff_.clear();
+    sendBuff_.clear();
+    rcvBuff_.clear();
+    sendFile_.data_=nullptr;
+    sendFile_.size_=0;
     isClose_ = false;
     LOG_INFO("Client[%d](%s:%d) in, userCount:%d", fd_, GetIP(), GetPort(), (int)userCount);
 }
@@ -66,50 +64,48 @@ int HttpConn::GetPort() const
     return addr_.sin_port;
 }
 
-ssize_t HttpConn::read(int *saveErrno)
+ssize_t HttpConn::Read(int *saveErrno)
 {
     ssize_t len = -1;
     do
     {
-        len = readBuff_.ReadFd(fd_, saveErrno);
-        if (len <= 0)
-        {
-            break;
-        }
+        len = rcvBuff_.ReadFd(fd_, saveErrno);
+        if(len<0) break; //ET 模式下必须读取到错误才能返回
     } while (isET);
     return len;
 }
 
-ssize_t HttpConn::write(int *saveErrno)
-{   
+ssize_t HttpConn::Write(int *saveErrno)
+{
     ssize_t len = -1;
     do
     {
-        len = writev(fd_, iov_, iovCnt_);
-        if (len <= 0)
+        if (sendBuff_.peekleft()!=0)
         {
-            *saveErrno = errno;
-            break;
-        }
-        if (iov_[0].iov_len + iov_[1].iov_len == 0)
-        {
-            break;
-        } /* 传输结束 */
-        else if (static_cast<size_t>(len) > iov_[0].iov_len)
-        {
-            iov_[1].iov_base = (uint8_t *)iov_[1].iov_base + (len - iov_[0].iov_len);
-            iov_[1].iov_len -= (len - iov_[0].iov_len);
-            if (iov_[0].iov_len)
-            {
-                writeBuff_.clear();
-                iov_[0].iov_len = 0;
-            }
+            len = sendBuff_.WriteFd(fd_, saveErrno);
+            if (len <0)
+                break;
+            //printf("%d len sendbuff\n",len);
         }
         else
-        {
-            iov_[0].iov_base = (uint8_t *)iov_[0].iov_base + len;
-            iov_[0].iov_len -= len;
-            writeBuff_.PeekAdd(len);
+        { // send file
+            if (sendFile_.size_ > 0)
+            {
+                len = write(fd_, sendFile_.data_, sendFile_.size_);
+                if (len <0)
+                {
+                    *saveErrno = errno;
+                    break;
+                }
+                sendFile_.data_ += len;
+                sendFile_.size_ -= len;
+                //printf("%d sendfilelen %d sendFile_.size_\n",len,sendFile_.size_);
+            }
+        }
+        if(ToWriteBytes()==0){  // 写自己可以判断是否写完，写完即可退出
+            //printf("%s",sendBuff_.data());
+            sendBuff_.clear(); 
+            break;
         }
     } while (isET || ToWriteBytes() > 10240);
     return len;
@@ -117,27 +113,22 @@ ssize_t HttpConn::write(int *saveErrno)
 
 bool HttpConn::ReadAndMake()
 {
-    if (false == request_.parse(readBuff_))
+    if (false == request_.parse(rcvBuff_))
         return false;
 
     LOG_DEBUG("%s", request_.path().c_str());
-    response_.Init(srcDir, request_.path(), request_.IsKeepAlive(), 200);
-    response_.MakeResponse(writeBuff_);
-    /* 响应头 */
-    iov_[0].iov_base = const_cast<char *>(writeBuff_.Peek());
-    iov_[0].iov_len = writeBuff_.ReadableBytes();
-    iovCnt_ = 1;
 
-    /* 文件 */
-    if (response_.FileLen() > 0 && response_.File())
+    response_.Init(srcDir, request_.path(), request_.IsKeepAlive(), 200);
+    response_.MakeResponse(sendBuff_);
+    if (response_.File() && response_.FileLen() > 0)
     {
-        iov_[1].iov_base = response_.File();
-        iov_[1].iov_len = response_.FileLen();
-        iovCnt_ = 2;
+        sendFile_.data_ = response_.File();
+        sendFile_.size_ = response_.FileLen();
     }
-    LOG_DEBUG("filesize:%d, %d  to %d", response_.FileLen(), iovCnt_, ToWriteBytes());
+
+    LOG_DEBUG("filesize:%d  to %d", sendFile_.size_, ToWriteBytes());
 
     request_.Init();
-    readBuff_.TryEarsePeek();
+    rcvBuff_.TryEarsePeek();
     return true;
 }

@@ -65,7 +65,7 @@ void HttpResponse::Init(const string& srcDir, string& path, bool isKeepAlive, in
     mmFileStat_ = { 0 };
 }
 
-void HttpResponse::MakeResponse(Buffer& buff) {
+void HttpResponse::MakeResponse(Buff& buff) {
     /* 判断请求的资源文件 */
     if(stat((srcDir_ + path_).data(), &mmFileStat_) < 0 || S_ISDIR(mmFileStat_.st_mode)) {
         code_ = 404;
@@ -97,7 +97,7 @@ void HttpResponse::ErrorHtml_() {
     }
 }
 
-void HttpResponse::AddStateLine_(Buffer& buff) {
+void HttpResponse::AddStateLine_(Buff& buff) {
     string status;
     if(CODE_STATUS.count(code_) == 1) {
         status = CODE_STATUS.find(code_)->second;
@@ -109,7 +109,7 @@ void HttpResponse::AddStateLine_(Buffer& buff) {
     buff.Append("HTTP/1.1 " + to_string(code_) + " " + status + "\r\n");
 }
 
-void HttpResponse::AddHeader_(Buffer& buff) {
+void HttpResponse::AddHeader_(Buff& buff) {
     buff.Append("Connection: ");
     if(isKeepAlive_) {
         buff.Append("keep-alive\r\n");
@@ -120,7 +120,7 @@ void HttpResponse::AddHeader_(Buffer& buff) {
     buff.Append("Content-type: " + GetFileType_() + "\r\n");
 }
 
-void HttpResponse::AddContent_(Buffer& buff) {
+void HttpResponse::AddContent_(Buff& buff) {
     int srcFd = open((srcDir_ + path_).data(), O_RDONLY);
     if(srcFd < 0) { 
         ErrorContent(buff, "File NotFound!");
@@ -160,7 +160,7 @@ string HttpResponse::GetFileType_() {
     return "text/plain";
 }
 
-void HttpResponse::ErrorContent(Buffer& buff, string message) 
+void HttpResponse::ErrorContent(Buff& buff, string message) 
 {
     string body;
     string status;

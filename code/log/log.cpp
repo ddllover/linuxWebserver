@@ -125,22 +125,23 @@ void Log::write(int level, const char *format, ...) {
     {
         unique_lock<mutex> locker(mtx_);
         lineCount_++;
-        int n = snprintf(buff_.BeginWrite(), 128, "%d-%02d-%02d %02d:%02d:%02d.%06ld ",
+        int n = snprintf(buff_.end(), 128, "%d-%02d-%02d %02d:%02d:%02d.%06ld ",
                     t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
                     t.tm_hour, t.tm_min, t.tm_sec, now.tv_usec);
                     
-        buff_.HasWritten(n);
+        buff_.resize(buff_.size()+n);
         AppendLogLevelTitle_(level);
 
         va_start(vaList, format);
-        int m = vsnprintf(buff_.BeginWrite(), buff_.WritableBytes(), format, vaList);
+        int m = vsnprintf(buff_.end(), buff_.leftsize(), format, vaList);
         va_end(vaList);
 
-        buff_.HasWritten(m);
+        buff_.resize(buff_.size()+m);
         buff_.Append("\n\0", 2);
 
         if(isAsync_ && deque_ && !deque_->full()) {
-            deque_->push_back(buff_.RetrieveAllToStr());
+            deque_->push_back(string(buff_.data()));
+            buff_.clear();
         } else {
             fputs(buff_.Peek(), fp_);
         }

@@ -15,8 +15,7 @@
 #include <assert.h>
 #include <sys/stat.h>         //mkdir
 #include "../src/safedeque.h"
-#include "../buffer/buffer.h"
-
+#include "../src/simvector.h"
 class Log {
 public:
     void init(int level, const char* path = "./log", 
@@ -54,7 +53,7 @@ private:
 
     bool isOpen_;
  
-    Buffer buff_;
+    Buff buff_;
     int level_;
     bool isAsync_;
 
