@@ -1,8 +1,6 @@
 
 #include "httpconn.h"
 using namespace std;
-
-const char *HttpConn::srcDir;
 bool HttpConn::isET;
 
 int HttpConn::Read()
@@ -53,22 +51,21 @@ int HttpConn::Write()
 
 bool HttpConn::ReadAndMake()
 {
-    if (false == request_.parse(rcvBuff_))
+    if (false == ParseRequest(rcvBuff_))
         return false;
+    LOG_DEBUG("%s",path_.data());
 
-    LOG_DEBUG("%s", request_.path().c_str());
-
-    response_.Init(srcDir, request_.path(), request_.IsKeepAlive(), 200);
-    response_.MakeResponse(sendBuff_);
-    if (response_.File() && response_.FileLen() > 0)
+    ResponseClear();
+    MakeResponse(sendBuff_);
+    if (mmFile_ && mmFileStat_.st_size > 0)
     {
-        sendFile_.data_ = response_.File();
-        sendFile_.size_ = response_.FileLen();
+        sendFile_.data_ = mmFile_;
+        sendFile_.size_ = mmFileStat_.st_size;
     }
 
     LOG_DEBUG("filesize:%d  to %d", sendFile_.size_, ToWriteBytes());
 
-    request_.Init();
+    RequestClear();
     rcvBuff_.TryEarsePeek();
     return true;
 }

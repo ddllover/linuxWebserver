@@ -1,75 +1,45 @@
-/*
- * @Author       : mark
- * @Date         : 2020-06-25
- * @copyleft Apache 2.0
- */ 
-#ifndef HTTP_REQUEST_H
-#define HTTP_REQUEST_H
-
+#pragma once
 #include <unordered_map>
 #include <unordered_set>
 #include <string>
 #include <regex>
-#include <errno.h>     
-#include <mysql/mysql.h>  //mysql
+#include <errno.h>
+#include <mysql/mysql.h> //mysql
 
 #include "../src/simvector.h"
 #include "../src/log.h"
 #include "../pool/sqlconnpool.h"
 #include "../pool/sqlconnRAII.h"
 
-class HttpRequest {
-public:
-    enum PARSE_STATE {
+class HttpRequest
+{
+protected:
+    bool isKeepAlive_;
+    std::string method_, path_, version_, body_;
+    std::unordered_map<std::string, std::string> header_;
+    std::unordered_map<std::string, std::string> post_;
+private:
+    enum PARSE_STATE
+    {
         REQUEST_LINE,
         HEADERS,
-        FINISH,        
-    };
+        FINISH,
+    }state_;
+    static const std::unordered_set<std::string> DEFAULT_HTML;
+    static const std::unordered_map<std::string, int> DEFAULT_HTML_TAG;
 
-    enum HTTP_CODE {
-        NO_REQUEST = 0,
-        GET_REQUEST,
-        BAD_REQUEST,
-        NO_RESOURSE,
-        FORBIDDENT_REQUEST,
-        FILE_REQUEST,
-        INTERNAL_ERROR,
-        CLOSED_CONNECTION,
-    };
-    
-    HttpRequest() { Init(); }
-    ~HttpRequest() = default;
-
-    void Init();
-    bool parse(Buff& buff);
-
-    std::string path() const;
-    std::string& path();
-    std::string method() const;
-    std::string version() const;
-    std::string GetPost(const std::string& key) const;
-    std::string GetPost(const char* key) const;
-    bool IsKeepAlive() const;
-
-private:
-    bool ParseRequestLine_(Buff& buff);
-    bool ParseHeader_(Buff& buff);
-    bool ParseBody_(Buff& buff);
+    bool ParseHeader_(Buff &buff);
+    bool ParseBody_(Buff &buff);
 
     void ParsePath_();
     void ParsePost_();
     void ParseFromUrlencoded_();
 
-    static bool UserVerify(const std::string& name, const std::string& pwd, bool isLogin);
+    static bool UserVerify(const std::string &name, const std::string &pwd, bool isLogin);
 
-    int state_;
-    std::string method_, path_, version_, body_;
-    std::unordered_map<std::string, std::string> header_;
-    std::unordered_map<std::string, std::string> post_;
-
-    static const std::unordered_set<std::string> DEFAULT_HTML;
-    static const std::unordered_map<std::string, int> DEFAULT_HTML_TAG;
+public:
+    HttpRequest() { RequestClear(); }
+    ~HttpRequest() = default;
+    void RequestClear();
+    bool ParseRequest(Buff &buff);
 };
-
-
-#endif //HTTP_REQUEST_H

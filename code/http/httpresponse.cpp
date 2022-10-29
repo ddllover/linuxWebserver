@@ -6,7 +6,7 @@
 #include "httpresponse.h"
 
 using namespace std;
-
+string HttpResponse::srcDir;
 const unordered_map<string, string> HttpResponse::SUFFIX_TYPE = {
     { ".html",  "text/html" },
     { ".xml",   "text/xml" },
@@ -42,32 +42,9 @@ const unordered_map<int, string> HttpResponse::CODE_PATH = {
     { 404, "/404.html" },
 };
 
-HttpResponse::HttpResponse() {
-    code_ = -1;
-    path_ = srcDir_ = "";
-    isKeepAlive_ = false;
-    mmFile_ = nullptr; 
-    mmFileStat_ = { 0 };
-};
-
-HttpResponse::~HttpResponse() {
-    UnmapFile();
-}
-
-void HttpResponse::Init(const string& srcDir, string& path, bool isKeepAlive, int code){
-    assert(srcDir != "");
-    if(mmFile_) { UnmapFile(); }
-    code_ = code;
-    isKeepAlive_ = isKeepAlive;
-    path_ = path;
-    srcDir_ = srcDir;
-    mmFile_ = nullptr; 
-    mmFileStat_ = { 0 };
-}
-
 void HttpResponse::MakeResponse(Buff& buff) {
     /* 判断请求的资源文件 */
-    if(stat((srcDir_ + path_).data(), &mmFileStat_) < 0 || S_ISDIR(mmFileStat_.st_mode)) {
+    if(stat((srcDir + path_).data(), &mmFileStat_) < 0 || S_ISDIR(mmFileStat_.st_mode)) {
         code_ = 404;
     }
     else if(!(mmFileStat_.st_mode & S_IROTH)) {
@@ -82,18 +59,10 @@ void HttpResponse::MakeResponse(Buff& buff) {
     AddContent_(buff);
 }
 
-char* HttpResponse::File() {
-    return mmFile_;
-}
-
-size_t HttpResponse::FileLen() const {
-    return mmFileStat_.st_size;
-}
-
 void HttpResponse::ErrorHtml_() {
     if(CODE_PATH.count(code_) == 1) {
         path_ = CODE_PATH.find(code_)->second;
-        stat((srcDir_ + path_).data(), &mmFileStat_);
+        stat((srcDir + path_).data(), &mmFileStat_);
     }
 }
 
@@ -121,7 +90,7 @@ void HttpResponse::AddHeader_(Buff& buff) {
 }
 
 void HttpResponse::AddContent_(Buff& buff) {
-    int srcFd = open((srcDir_ + path_).data(), O_RDONLY);
+    int srcFd = open((srcDir + path_).data(), O_RDONLY);
     if(srcFd < 0) { 
         ErrorContent(buff, "File NotFound!");
         return; 
@@ -129,7 +98,7 @@ void HttpResponse::AddContent_(Buff& buff) {
 
     /* 将文件映射到内存提高文件的访问速度 
         MAP_PRIVATE 建立一个写入时拷贝的私有映射*/
-    LOG_DEBUG("file path %s", (srcDir_ + path_).data());
+    LOG_DEBUG("file path %s", (srcDir + path_).data());
     int* mmRet = (int*)mmap(0, mmFileStat_.st_size, PROT_READ, MAP_PRIVATE, srcFd, 0);
     if(*mmRet == -1) {
         ErrorContent(buff, "File NotFound!");

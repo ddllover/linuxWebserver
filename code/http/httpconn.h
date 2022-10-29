@@ -19,12 +19,11 @@
 #include "httprequest.h"
 #include "httpresponse.h"
 
-class HttpConn
+class HttpConn:public HttpResponse
 {
 private:
     int fd_;
     struct sockaddr_in addr_;
-
     bool isClose_;
 
     struct file
@@ -35,12 +34,11 @@ private:
     Buff rcvBuff_;  // 读缓冲区
     Buff sendBuff_; // 写缓冲区
 
-    HttpRequest request_;
+    //HttpRequest request_;
     HttpResponse response_;
 
 public:
     static bool isET;
-    static const char *srcDir;
     HttpConn()
     {
         fd_ = -1;
@@ -97,7 +95,7 @@ public:
 
     bool IsKeepAlive() const
     {
-        return request_.IsKeepAlive();
+        return isKeepAlive_;
     }
 };
 

@@ -20,30 +20,18 @@ const unordered_map<string, int> HttpRequest::DEFAULT_HTML_TAG{
     {"/login.html", 1},
 };
 
-void HttpRequest::Init()
+void HttpRequest::RequestClear()
 {
+    isKeepAlive_=false;
     method_ = path_ = version_ = body_ = "";
     state_ = REQUEST_LINE;
     header_.clear();
     post_.clear();
 }
 
-bool HttpRequest::IsKeepAlive() const
+bool HttpRequest::ParseRequest(Buff &buff)
 {
-    if (header_.count("Connection") == 1)
-    {
-        return header_.find("Connection")->second == "keep-alive" && version_ == "1.1";
-    }
-    return false;
-}
-
-bool HttpRequest::parse(Buff &buff)
-{
-    return ParseRequestLine_(buff);
-}
-
-bool HttpRequest::ParseRequestLine_(Buff &buff)
-{   if(REQUEST_LINE != state_) return ParseHeader_(buff);
+    if(REQUEST_LINE != state_) return ParseHeader_(buff);
     static regex patten("^([^ \r\n]*) ([^ \r\n]*) HTTP/([^ \r\n]*)\r\n");
     cmatch subMatch;
     if (regex_search(buff.Peek(), subMatch, patten))
@@ -115,6 +103,7 @@ bool HttpRequest::ParseBody_(Buff &buff)
         }
     }
     state_ = FINISH;
+    isKeepAlive_=header_["Connection"]== "keep-alive"&&version_ == "1.1";
     LOG_DEBUG("Body:%s, len:%d", body_.c_str(), body_.size());
     return true;
 }
@@ -243,43 +232,4 @@ bool HttpRequest::UserVerify(const string &name, const string &pwd, bool isLogin
     SqlConnPool::Instance()->FreeConn(sql);
     LOG_DEBUG("UserVerify success!!");
     return flag;
-}
-
-std::string HttpRequest::path() const
-{
-    return path_;
-}
-
-std::string &HttpRequest::path()
-{
-    return path_;
-}
-std::string HttpRequest::method() const
-{
-    return method_;
-}
-
-std::string HttpRequest::version() const
-{
-    return version_;
-}
-
-std::string HttpRequest::GetPost(const std::string &key) const
-{
-    assert(key != "");
-    if (post_.count(key) == 1)
-    {
-        return post_.find(key)->second;
-    }
-    return "";
-}
-
-std::string HttpRequest::GetPost(const char *key) const
-{
-    assert(key != nullptr);
-    if (post_.count(key) == 1)
-    {
-        return post_.find(key)->second;
-    }
-    return "";
 }
