@@ -13,7 +13,7 @@ protected:         // 3.只保证值类型，需要更强大模板请使用vecto
     T *data_ = nullptr;
 
 public:
-    SimVector(int capacity = 2048, int marknum = 0) : capacity_(capacity), size_(0)
+    SimVector(int capacity = 2048) : capacity_(capacity), size_(0)
     {
         if (capacity_ != 0)
         { // printf("SimVector 构造\n");
