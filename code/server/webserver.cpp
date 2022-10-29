@@ -98,8 +98,8 @@ void WebServer::ClientRcv(HttpConn *client)
     assert(client);
     int ret = -1;
     int readErrno = 0;
-    ret = client->Read(&readErrno);
-    if (ret < 0 && readErrno != EAGAIN) // Et可以异常返回
+    ret = client->Read();
+    if (ret < 0 && errno != EAGAIN) // Et可以异常返回
     {
         LOG_ERROR("recv client[%d] %s", client->GetFd(), strerror(errno));
         ClientClose(client);
@@ -120,8 +120,8 @@ void WebServer::ClientWri(HttpConn *client)
     assert(client);
     int ret = -1;
     int writeErrno = 0;
-    ret = client->Write(&writeErrno);
-    if (ret < 0 && writeErrno != EAGAIN)
+    ret = client->Write();
+    if (ret < 0 && errno != EAGAIN)
     { // Et可以异常返回
         LOG_ERROR("send client[%d] %s", client->GetFd(), strerror(errno));
         ClientClose(client);

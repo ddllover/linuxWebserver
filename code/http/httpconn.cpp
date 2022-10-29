@@ -5,83 +5,28 @@ using namespace std;
 const char *HttpConn::srcDir;
 bool HttpConn::isET;
 
-HttpConn::HttpConn()
+int HttpConn::Read()
 {
-    fd_ = -1;
-    addr_ = {0};
-    isClose_ = true;
-};
-
-HttpConn::~HttpConn()
-{
-    Close();
-};
-
-void HttpConn::init(int fd, const sockaddr_in &addr)
-{
-    assert(fd > 0);
-    addr_ = addr;
-    fd_ = fd;
-    sendBuff_.clear();
-    rcvBuff_.clear();
-    sendFile_.data_=nullptr;
-    sendFile_.size_=0;
-    isClose_ = false;
-    
-}
-
-void HttpConn::Close()
-{
-    response_.UnmapFile();
-    if (!isClose_)
-    {
-        isClose_ = true;
-        close(fd_);
-    }
-}
-
-int HttpConn::GetFd() const
-{
-    return fd_;
-};
-
-struct sockaddr_in HttpConn::GetAddr() const
-{
-    return addr_;
-}
-
-const char *HttpConn::GetIP() const
-{
-    return inet_ntoa(addr_.sin_addr);
-}
-
-int HttpConn::GetPort() const
-{
-    return addr_.sin_port;
-}
-
-ssize_t HttpConn::Read(int *saveErrno)
-{
-    ssize_t len = -1;
+    int len = -1;
     do
     {
-        len = rcvBuff_.ReadFd(fd_, saveErrno);
+        len = rcvBuff_.ReadFd(fd_);
         if(len<0) break; //ET 模式下必须读取到错误才能返回
     } while (isET);
     return len;
 }
 
-ssize_t HttpConn::Write(int *saveErrno)
+int HttpConn::Write()
 {
-    ssize_t len = -1;
+    int len = -1;
     do
     {
         if (sendBuff_.peekleft()!=0)
         {
-            len = sendBuff_.WriteFd(fd_, saveErrno);
+            len = sendBuff_.WriteFd(fd_);
             if (len <0)
                 break;
-            //printf("%d len sendbuff\n",len);
+            LOG_DEBUG("%d len sendbuff\n",len);
         }
         else
         { // send file
@@ -90,16 +35,15 @@ ssize_t HttpConn::Write(int *saveErrno)
                 len = write(fd_, sendFile_.data_, sendFile_.size_);
                 if (len <0)
                 {
-                    *saveErrno = errno;
                     break;
                 }
                 sendFile_.data_ += len;
                 sendFile_.size_ -= len;
-                //printf("%d sendfilelen %d sendFile_.size_\n",len,sendFile_.size_);
+                LOG_DEBUG("%d sendfilelen %d sendFile_.size_\n",len,sendFile_.size_);
             }
         }
-        if(ToWriteBytes()==0){  // 写自己可以判断是否写完，写完即可退出
-            //printf("%s",sendBuff_.data());
+        if(ToWriteBytes()==0){ 
+            LOG_DEBUG("%s",sendBuff_.data());
             sendBuff_.clear(); 
             break;
         }

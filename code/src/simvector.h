@@ -114,28 +114,20 @@ public:
         }
         return false;
     }
-    int ReadFd(int fd, int *error)
+    int ReadFd(int fd)
     {
         int len = read(fd, end(), leftsize());
-        if (len < 0)
-        {
-            *error = errno;
-        }
-        else
+        if (len > 0)
         {
             resize(size_ + len);
         }
         return len;
     }
-    int WriteFd(int fd, int *Errno)
+    int WriteFd(int fd)
     {
         int len = write(fd, Peek(), peekleft());
-        if (len <0)
+        if (len >0)
         {
-            *Errno = errno;
-        }
-        else
-        {   
             peek_ += len;
         }
         return len;

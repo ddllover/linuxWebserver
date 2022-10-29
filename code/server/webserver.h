@@ -25,7 +25,30 @@
 #include "../src/log.h"
 class WebServer
 {
-public:
+private:
+    // 基本设置
+    //bool openLinger_;
+    int timeoutMS_; /* 毫秒MS */
+    bool isClose_ = false;
+    char *srcDir_;
+    uint32_t listenEvent_;
+    uint32_t clientEvent_;
+    // 组件
+    std::unique_ptr<HeapTimer> timer_;
+    std::unique_ptr<ThreadPool> threadpool_;
+    std::unique_ptr<Epoll> epoller_;
+    std::unique_ptr<ServSocket> servsocket_;
+    // 服务对象
+    std::unordered_map<int, HttpConn> users_;
+    const int MAX_FD = 65536;
+    int userCount_ = 0;
+    //过程
+    void ClientAccept();
+    void ClientClose(HttpConn *client);
+    void ClientRcv(HttpConn *client);
+    void ClientWri(HttpConn *client);
+
+public: //配置
     WebServer(int threadNum)
     {
         threadpool_ = make_unique<ThreadPool>(threadNum);
@@ -59,29 +82,6 @@ public:
         }
     }
     void Process();
-
-private:
-    void ClientAccept();
-    void ClientClose(HttpConn *client);
-    void ClientRcv(HttpConn *client);
-    void ClientWri(HttpConn *client);
-
-    // 基本设置
-    bool openLinger_;
-    int timeoutMS_; /* 毫秒MS */
-    bool isClose_ = false;
-    char *srcDir_;
-    uint32_t listenEvent_;
-    uint32_t clientEvent_;
-    // 组件
-    std::unique_ptr<HeapTimer> timer_;
-    std::unique_ptr<ThreadPool> threadpool_;
-    std::unique_ptr<Epoll> epoller_;
-    std::unique_ptr<ServSocket> servsocket_;
-    // 服务对象
-    std::unordered_map<int, HttpConn> users_;
-    const int MAX_FD = 65536;
-    int userCount_ = 0;
 };
 
 #endif // WEBSERVER_H
