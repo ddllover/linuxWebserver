@@ -2,7 +2,7 @@ CXX = g++
 CFLAGS = -std=c++20 -O2  -Wall -g 
 
 TARGET = server
-OBJS = ../code/log/*.cpp ../code/pool/*.cpp ../code/timer/*.cpp \
+OBJS = ../code/pool/*.cpp ../code/timer/*.cpp \
        ../code/http/*.cpp ../code/server/*.cpp \
        ../code/main.cpp
 

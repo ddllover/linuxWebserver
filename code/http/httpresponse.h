@@ -12,7 +12,7 @@
 #include <sys/stat.h>    // stat
 #include <sys/mman.h>    // mmap, munmap
 
-#include "../log/log.h"
+#include "../src/log.h"
 #include"../src/simvector.h"
 
 class HttpResponse {

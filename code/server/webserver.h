@@ -2,74 +2,86 @@
  * @Author       : mark
  * @Date         : 2020-06-17
  * @copyleft Apache 2.0
- */ 
+ */
 #ifndef WEBSERVER_H
 #define WEBSERVER_H
 
 #include <unordered_map>
-#include <fcntl.h>       // fcntl()
-#include <unistd.h>      // close()
+#include <fcntl.h>  // fcntl()
+#include <unistd.h> // close()
 #include <assert.h>
 #include <errno.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include "../log/log.h"
 #include "../timer/heaptimer.h"
 #include "../pool/sqlconnpool.h"
 #include "../pool/threadpool.h"
 #include "../pool/sqlconnRAII.h"
 #include "../http/httpconn.h"
-//#include "../CGI/CGI.h"
 #include "../src/epoll.h"
 #include "../src/servsocket.h"
-class WebServer {
+#include "../src/log.h"
+class WebServer
+{
 public:
-    WebServer(
-        int port, int trigMode, int timeoutMS, bool OptLinger, 
-        int sqlPort, const char* sqlUser, const  char* sqlPwd, 
-        const char* dbName, int connPoolNum, int threadNum,
-        bool openLog, int logLevel, int logQueSize);
+    WebServer(int threadNum)
+    {
+        threadpool_ = make_unique<ThreadPool>(threadNum);
+        timer_ = make_unique<HeapTimer>();
+        epoller_ = make_unique<Epoll>();
+        listenEvent_ = EPOLLRDHUP;
+        clientEvent_ = EPOLLONESHOT | EPOLLRDHUP;
+    }
+    ~WebServer(){};
+    void InitWebserver(const char ip[], const char port[], bool clientET = false, bool listenET = false, int timeoutMS = 5000)
+    {
+        servsocket_.reset(new ServSocket(ip, port));
+        if (listenET)
+            listenEvent_ |= EPOLLET;
+        if (clientET)
+            clientEvent_ |= EPOLLET;
+        HttpConn::isET = (clientEvent_ & EPOLLET);
+        timeoutMS_ = timeoutMS;
 
-    ~WebServer();
-    void Start();
+        srcDir_ = getcwd(nullptr, 256);
+        assert(srcDir_);
+        strncat(srcDir_, "/resources/", 16);
+        HttpConn::srcDir = srcDir_;
+        {
+            LOG_INFO("========== Server init ==========");
+            LOG_INFO("Ip:%s Port:%s", port);
+            LOG_INFO("Listen Mode: %s, OpenConn Mode: %s", listenET ? "ET" : "LT", clientET ? "ET" : "LT");
+            // LOG_INFO("LogSys level: %d", logLevel);
+            LOG_INFO("srcDir: %s", HttpConn::srcDir);
+            // LOG_INFO("SqlConnPool num: %d, ThreadPool num: %d", connPoolNum, threadNum);
+        }
+    }
+    void Process();
 
 private:
-    void InitEventMode_(int trigMode);
-    void AddClient_(int fd, sockaddr_in addr);
-  
     void ClientAccept();
-    void ClientWri(HttpConn* client);
-    void ClientRcv(HttpConn* client);
-    void ClientClose(HttpConn* client);
+    void ClientClose(HttpConn *client);
+    void ClientRcv(HttpConn *client);
+    void ClientWri(HttpConn *client);
 
-    void SendError_(int fd, const char*info);
-
-
-    void OnRead_(HttpConn* client);
-    void OnWrite_(HttpConn* client);
-    void OnProcess(HttpConn* client);
-
-    static const int MAX_FD = 65536;
-
-    static int SetFdNonblock(int fd);
-
-    int port_;
+    // 基本设置
     bool openLinger_;
-    int timeoutMS_;  /* 毫秒MS */
-    bool isClose_;
-    char* srcDir_;
-    
+    int timeoutMS_; /* 毫秒MS */
+    bool isClose_ = false;
+    char *srcDir_;
     uint32_t listenEvent_;
-    uint32_t connEvent_;
-   
+    uint32_t clientEvent_;
+    // 组件
     std::unique_ptr<HeapTimer> timer_;
     std::unique_ptr<ThreadPool> threadpool_;
     std::unique_ptr<Epoll> epoller_;
     std::unique_ptr<ServSocket> servsocket_;
+    // 服务对象
     std::unordered_map<int, HttpConn> users_;
+    const int MAX_FD = 65536;
+    int userCount_ = 0;
 };
 
-
-#endif //WEBSERVER_H
+#endif // WEBSERVER_H

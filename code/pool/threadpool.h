@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <thread>
+#include <deque>
 #include <mutex>
 #include <condition_variable>
 #include <vector>
@@ -44,49 +45,53 @@ class ThreadPool
 {
 private:
     class ThreadWorker
-    { //内置线程工作类
+    { // 内置线程工作类
 
     private:
-        int id;           //工作id
-        ThreadPool *pool=nullptr; //所属线程池
+        int id_;                     // 工作id
+        ThreadPool *pool_ = nullptr; // 所属线程池
     public:
-        ThreadWorker(ThreadPool *pool, const int id) : pool(pool), id(id) {}
+        ThreadWorker(ThreadPool *pool, const int id)
+        {
+            pool_ = pool;
+            id_ = id;
+        }
         void operator()()
         {
-            std::function<void()> func; //定义基础函数类func
-            //判断线程池是否关闭，没有关闭，循环提取
-            unique_lock<mutex> lk(pool->mutex_);
-            while (!pool->isClose)
+            std::function<void()> func; // 定义基础函数类func
+            // 判断线程池是否关闭，没有关闭，循环提取
+            unique_lock<mutex> lk(pool_->mutex_);
+            while (!pool_->isClose)
             {
-                if (!pool->taskDeque.empty())
+                if (!pool_->taskDeque.empty())
                 {
-                    func = pool->taskDeque.front();
-                    pool->taskDeque.pop_front();
+                    func = pool_->taskDeque.front();
+                    pool_->taskDeque.pop_front();
                     lk.unlock();
                     func();
                     lk.lock();
                 }
                 else
                 {
-                    pool->conMutex_.wait(lk);
+                    pool_->conMutex_.wait(lk);
                 }
             }
         }
     };
 
-    bool isClose = false;              //线程池是否关闭
-    deque<function<void()>> taskDeque; //执行函数安全队列，即任务队列
-    vector<thread> threads;            //工作线程队列
+    bool isClose = false;              // 线程池是否关闭
+    deque<function<void()>> taskDeque; // 执行函数安全队列，即任务队列
+    vector<thread> threads;            // 工作线程队列
     mutex mutex_;
     condition_variable conMutex_;
 
 public:
-    //线程池构造函数
-    explicit ThreadPool(const int n_threads) : threads(vector<thread>(n_threads))//, taskDeque(1000000)
+    // 线程池构造函数
+    explicit ThreadPool(const int n_threads) : threads(vector<thread>(n_threads)) //, taskDeque(1000000)
     {
         for (int i = 0; i < (int)threads.size(); ++i)
         {
-            threads[i] = thread(ThreadWorker(this, i)); //分配工作线程
+            threads[i] = thread(ThreadWorker(this, i)); // 分配工作线程
         }
     }
     ThreadPool(const ThreadPool &) = delete;
@@ -96,13 +101,18 @@ public:
     ~ThreadPool() { shutdown(); }
     void shutdown()
     { // 强制操作控制线程
-        isClose = true;
+        {
+            lock_guard<mutex> lk(mutex_);
+            isClose = true;
+        }
         // taskDeque.Close();
+        conMutex_.notify_all();
         for (int i = 0; i < (int)threads.size(); ++i)
         {
             if (threads[i].joinable())
             {
-                threads[i].join(); //将线程加入等待队列
+                //
+                threads[i].join(); // 将线程加入等待队列
             }
         }
     }
@@ -110,7 +120,7 @@ public:
     auto AddTask(F &&f, Args &&...args) -> std::future<decltype(f(args...))>
     { // bind绑定部分参数 function 只可以绑定可复制的对象  bind会范围更广但 只有全是可复制的才能复制
         function<decltype(f(args...))()> func = bind(forward<F>(f), forward<Args>(args)...);
-        //封装获取任务对象，方便另外一个线程查看结果
+        // 封装获取任务对象，方便另外一个线程查看结果
         auto task_ptr = make_shared<packaged_task<decltype(f(args...))()>>(func);
         // Wrap packaged task into void function
         function<void()> wrapper_func = [task_ptr]()

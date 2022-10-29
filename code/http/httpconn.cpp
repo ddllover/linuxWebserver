@@ -3,7 +3,6 @@
 using namespace std;
 
 const char *HttpConn::srcDir;
-std::atomic<int> HttpConn::userCount;
 bool HttpConn::isET;
 
 HttpConn::HttpConn()
@@ -21,7 +20,6 @@ HttpConn::~HttpConn()
 void HttpConn::init(int fd, const sockaddr_in &addr)
 {
     assert(fd > 0);
-    userCount++;
     addr_ = addr;
     fd_ = fd;
     sendBuff_.clear();
@@ -29,18 +27,16 @@ void HttpConn::init(int fd, const sockaddr_in &addr)
     sendFile_.data_=nullptr;
     sendFile_.size_=0;
     isClose_ = false;
-    LOG_INFO("Client[%d](%s:%d) in, userCount:%d", fd_, GetIP(), GetPort(), (int)userCount);
+    
 }
 
 void HttpConn::Close()
 {
     response_.UnmapFile();
-    if (isClose_ == false)
+    if (!isClose_)
     {
         isClose_ = true;
-        userCount--;
         close(fd_);
-        LOG_INFO("Client[%d](%s:%d) quit, UserCount:%d", fd_, GetIP(), GetPort(), (int)userCount);
     }
 }
 

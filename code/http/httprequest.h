@@ -14,7 +14,7 @@
 #include <mysql/mysql.h>  //mysql
 
 #include "../src/simvector.h"
-#include "../log/log.h"
+#include "../src/log.h"
 #include "../pool/sqlconnpool.h"
 #include "../pool/sqlconnRAII.h"
 
@@ -49,14 +49,7 @@ public:
     std::string version() const;
     std::string GetPost(const std::string& key) const;
     std::string GetPost(const char* key) const;
-    //static cmatch subMatch;
     bool IsKeepAlive() const;
-
-    /* 
-    todo 
-    void HttpConn::ParseFormData() {}
-    void HttpConn::ParseJson() {}
-    */
 
 private:
     bool ParseRequestLine_(Buff& buff);

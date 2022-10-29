@@ -37,23 +37,31 @@ public:
     {
         return data_ + size_;
     }
-    void reserve(int size) // 只动capacity_
-    {                      // 容器至少比size，并非是size
+    void shift_to(int size){  //强制重置大小到size
+        T *tmp = (T *)realloc(data_, (size) * sizeof(T));
+        if (tmp)
+            data_ = tmp;
+        else
+        {   
+            assert(tmp);
+        }
+        capacity_=size;
+    }
+    void reserve(int size) //capacity_，容器至少比size，并非是size
+    {                  
         if (capacity_ > size)
             return;
-        printf("reserve\n");
         T *tmp = (T *)realloc(data_, (size + 4096) * sizeof(T));
         if (tmp)
             data_ = tmp;
         else
-        {
-            free(data_);
-            perror("realloc error ");
+        {   
+            assert(tmp);
         }
         memset(data_ + size_, 0, (size + 4096 - capacity_) * sizeof(T));
-        capacity_ = size + 4096; // 每次多预留2048空间
+        capacity_ = size + 4096; 
     }
-    bool resize(int size) // 只动 size_ 和capacity_
+    bool resize(int size) //size_  如果扩容会改变capacity_
     {
         if (size >= 0)
             size_ = size;
@@ -74,7 +82,7 @@ public:
     {
         return capacity_;
     }
-    T *data() // 缓冲区的读取都是在外面
+    T *data() // 返回基指针
     {
         return data_;
     }
@@ -88,9 +96,10 @@ public:
 class Buff : public SimVector<char>
 {
 private:
-    int peek_;  //当作游标使用，标记已经存在的元素  对于read增加size_解析使用peek
+    int peek_;  //当作游标使用,方便缓冲区操作
 public:
-    Buff() : SimVector<char>() { peek_ = 0; }
+    Buff():SimVector<char>(){peek_ = 0;}
+    Buff(int len) : SimVector<char>(len) { peek_ = 0; }
     void PeekAdd(int len) { peek_ += len; }
     char *Peek() { return data_ + peek_; }
     bool TryEarsePeek(int mark = 20480)

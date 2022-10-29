@@ -8,87 +8,13 @@
 
 using namespace std;
 
-WebServer::WebServer(
-    int port, int trigMode, int timeoutMS, bool OptLinger,
-    int sqlPort, const char *sqlUser, const char *sqlPwd,
-    const char *dbName, int connPoolNum, int threadNum,
-    bool openLog, int logLevel, int logQueSize)
-    : port_(port), openLinger_(OptLinger), timeoutMS_(timeoutMS), isClose_(false),
-      timer_(new HeapTimer()), threadpool_(new ThreadPool(threadNum)), epoller_(new Epoll()),
-      servsocket_(new ServSocket("127.0.0.1", to_string(port)))
+void WebServer::Process()
 {
-    srcDir_ = getcwd(nullptr, 256);
-    assert(srcDir_);
-    strncat(srcDir_, "/resources/", 16);
-    HttpConn::userCount = 0;
-    HttpConn::srcDir = srcDir_;
-    SqlConnPool::Instance()->Init("localhost", sqlPort, sqlUser, sqlPwd, dbName, connPoolNum);
-
-    InitEventMode_(trigMode);
-
-    if (openLog)
-    {
-        Log::Instance()->init(logLevel, "./log", ".log", logQueSize);
-        if (isClose_)
-        {
-            LOG_ERROR("========== Server init error!==========");
-        }
-        else
-        {
-            LOG_INFO("========== Server init ==========");
-            LOG_INFO("Port:%d, OpenLinger: %s", port_, OptLinger ? "true" : "false");
-            LOG_INFO("Listen Mode: %s, OpenConn Mode: %s",
-                     (listenEvent_ & EPOLLET ? "ET" : "LT"),
-                     (connEvent_ & EPOLLET ? "ET" : "LT"));
-            LOG_INFO("LogSys level: %d", logLevel);
-            LOG_INFO("srcDir: %s", HttpConn::srcDir);
-            LOG_INFO("SqlConnPool num: %d, ThreadPool num: %d", connPoolNum, threadNum);
-        }
-    }
-}
-
-WebServer::~WebServer()
-{
-    close(servsocket_->getSocket());
-    isClose_ = true;
-    free(srcDir_);
-    SqlConnPool::Instance()->ClosePool();
-}
-
-void WebServer::InitEventMode_(int trigMode)
-{
-    listenEvent_ = EPOLLRDHUP;
-    connEvent_ = EPOLLONESHOT | EPOLLRDHUP;
-    switch (trigMode)
-    {
-    case 0:
-        break;
-    case 1:
-        connEvent_ |= EPOLLET;
-        break;
-    case 2:
-        listenEvent_ |= EPOLLET;
-        break;
-    case 3:
-        listenEvent_ |= EPOLLET;
-        connEvent_ |= EPOLLET;
-        break;
-    default:
-        listenEvent_ |= EPOLLET;
-        connEvent_ |= EPOLLET;
-        break;
-    }
-    HttpConn::isET = (connEvent_ & EPOLLET);
-}
-
-void WebServer::Start()
-{
+    if (isClose_)
+        return;
     epoller_->AddFd(servsocket_->getSocket(), listenEvent_ | EPOLLIN);
-    int timeMS = -1; /* epoll wait timeout == -1 无事件将阻塞 */
-    if (!isClose_)
-    {
-        LOG_INFO("========== Server start ==========");
-    }
+    LOG_INFO("========== Server start ==========");
+    int timeMS = -1;
     while (!isClose_)
     {
         if (timeoutMS_ > 0)
@@ -104,42 +30,35 @@ void WebServer::Start()
             {
                 ClientAccept();
             }
-            else if (events & EPOLLIN)
-            {
-                assert(users_.count(fd) > 0);
-                ClientRcv(&users_[fd]);
-            }
-            else if (events & EPOLLOUT)
-            {
-                assert(users_.count(fd) > 0);
-                ClientWri(&users_[fd]);
-            }
-            else if (events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR))
-            {
-                assert(users_.count(fd) > 0);
-                ClientClose(&users_[fd]);
-            }
             else
             {
-                LOG_ERROR("Unexpected event");
+                assert(users_.find(fd) != users_.end());
+                auto client = &users_[fd];
+                if (events & EPOLLIN)
+                {
+                    if (timeoutMS_ > 0)
+                        timer_->adjust(client->GetFd(), timeoutMS_);
+                    threadpool_->AddTask(std::bind(&WebServer::ClientRcv, this, client));
+                }
+                else if (events & EPOLLOUT)
+                {
+                    if (timeoutMS_ > 0)
+                        timer_->adjust(client->GetFd(), timeoutMS_);
+                    threadpool_->AddTask(std::bind(&WebServer::ClientWri, this, client));
+                }
+                else if (events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR))
+                {
+                    ClientClose(&users_[fd]);
+                }
+                else
+                    LOG_ERROR("Unexpected event");
             }
         }
     }
 }
 
-void WebServer::SendError_(int fd, const char *info)
-{
-    assert(fd > 0);
-    int ret = send(fd, info, strlen(info), 0);
-    if (ret < 0)
-    {
-        LOG_WARN("send error to client[%d] error!", fd);
-    }
-    close(fd);
-}
-
 void WebServer::ClientAccept()
-{   
+{
     struct sockaddr_in addr = {0};
     do
     {
@@ -148,93 +67,78 @@ void WebServer::ClientAccept()
         {
             return;
         }
-        else if (HttpConn::userCount >= MAX_FD)
+        else if (userCount_ >= MAX_FD)
         {
-            perror("server bad\n");
-            SendError_(fd, "Server busy!");
+            close(fd);
             LOG_WARN("Clients is full!");
             return;
         }
+        userCount_++;
         users_[fd].init(fd, addr);
+        LOG_INFO("Client[%d](%s:%d) accept, userCount:%d", fd, users_[fd].GetIP(), users_[fd].GetPort(), userCount_);
         if (timeoutMS_ > 0)
         {
             timer_->add(fd, timeoutMS_, std::bind(&WebServer::ClientClose, this, &users_[fd]));
         }
-        epoller_->AddFd(fd, EPOLLIN | connEvent_);
+        epoller_->AddFd(fd, EPOLLIN | clientEvent_);
     } while (listenEvent_ & EPOLLET);
-}
-
-void WebServer::ClientRcv(HttpConn *client)
-{
-    assert(client);
-    if (timeoutMS_ > 0)
-    {
-        timer_->adjust(client->GetFd(), timeoutMS_);
-    }
-    threadpool_->AddTask(std::bind(&WebServer::OnRead_, this, client));
-}
-
-void WebServer::ClientWri(HttpConn *client)
-{
-    assert(client);
-    if (timeoutMS_ > 0)
-    {
-        timer_->adjust(client->GetFd(), timeoutMS_);
-    }
-    threadpool_->AddTask(std::bind(&WebServer::OnWrite_, this, client));
 }
 
 void WebServer::ClientClose(HttpConn *client)
 {
     assert(client);
-    LOG_INFO("Client[%d] quit!", client->GetFd());
     epoller_->DelFd(client->GetFd());
     client->Close();
+    userCount_--;
+    LOG_INFO("Client[%d](%s:%d) quit, UserCount:%d", client->GetFd(), client->GetIP(), client->GetPort(), userCount_);
 }
-void WebServer::OnRead_(HttpConn *client)
+
+void WebServer::ClientRcv(HttpConn *client)
 {
     assert(client);
     int ret = -1;
     int readErrno = 0;
     ret = client->Read(&readErrno);
-    if (ret < 0 && readErrno != EAGAIN) //Et可以异常返回
+    if (ret < 0 && readErrno != EAGAIN) // Et可以异常返回
     {
+        LOG_ERROR("recv client[%d] %s", client->GetFd(), strerror(errno));
         ClientClose(client);
         return;
     }
     if (client->ReadAndMake())
     {
-        epoller_->ModFd(client->GetFd(), connEvent_ | EPOLLOUT);
+        epoller_->ModFd(client->GetFd(), clientEvent_ | EPOLLOUT);
     }
     else
     {
-        epoller_->ModFd(client->GetFd(), connEvent_ | EPOLLIN);
+        epoller_->ModFd(client->GetFd(), clientEvent_ | EPOLLIN);
     }
 }
 
-void WebServer::OnWrite_(HttpConn *client)
+void WebServer::ClientWri(HttpConn *client)
 {
     assert(client);
     int ret = -1;
     int writeErrno = 0;
     ret = client->Write(&writeErrno);
-    if(ret<0&&writeErrno != EAGAIN){ //Et可以异常返回
+    if (ret < 0 && writeErrno != EAGAIN)
+    { // Et可以异常返回
+        LOG_ERROR("send client[%d] %s", client->GetFd(), strerror(errno));
         ClientClose(client);
-        return ;
+        return;
     }
     if (client->ToWriteBytes() == 0)
-    {   
-        if (client->IsKeepAlive())
-        {   printf("not close  client\n");
-            epoller_->ModFd(client->GetFd(), connEvent_ | EPOLLIN);
-            return ;
-        }
-        ClientClose(client);
-    }
-    else 
     {
-        epoller_->ModFd(client->GetFd(), connEvent_ | EPOLLOUT);   
+        if (client->IsKeepAlive())
+        {
+            epoller_->ModFd(client->GetFd(), clientEvent_ | EPOLLIN);
+            return;
+        }
+        else
+            ClientClose(client);
     }
-
-    
+    else
+    {
+        epoller_->ModFd(client->GetFd(), clientEvent_ | EPOLLOUT);
+    }
 }
