@@ -141,7 +141,9 @@ public:
         peek_ = 0;
         bzero(data_, capacity_);
     }
-
+    void Append (const char * str){
+        Append(str,sizeof(str));
+    }
     void Append(const std::string &str)
     {
         Append(str.data(), str.length());

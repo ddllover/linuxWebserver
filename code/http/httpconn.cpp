@@ -1,4 +1,3 @@
-
 #include "httpconn.h"
 using namespace std;
 bool HttpConn::isET;

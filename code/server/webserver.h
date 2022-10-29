@@ -1,11 +1,4 @@
-/*
- * @Author       : mark
- * @Date         : 2020-06-17
- * @copyleft Apache 2.0
- */
-#ifndef WEBSERVER_H
-#define WEBSERVER_H
-
+#pragma once
 #include <unordered_map>
 #include <fcntl.h>  // fcntl()
 #include <unistd.h> // close()
@@ -72,14 +65,13 @@ public: //配置
         HttpResponse::srcDir= srcDir_;
         {
             LOG_INFO("========== Server init ==========");
-            LOG_INFO("Ip:%s Port:%s", port);
+            LOG_INFO("Ip:%s Port:%s",ip, port);
             LOG_INFO("Listen Mode: %s, OpenConn Mode: %s", listenET ? "ET" : "LT", clientET ? "ET" : "LT");
             // LOG_INFO("LogSys level: %d", logLevel);
             LOG_INFO("srcDir: %s", srcDir_);
             // LOG_INFO("SqlConnPool num: %d, ThreadPool num: %d", connPoolNum, threadNum);
         }
     }
+    //对外接口
     void Process();
 };
-
-#endif // WEBSERVER_H

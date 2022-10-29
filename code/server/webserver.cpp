@@ -1,9 +1,3 @@
-/*
- * @Author       : mark
- * @Date         : 2020-06-17
- * @copyleft Apache 2.0
- */
-
 #include "webserver.h"
 
 using namespace std;
@@ -100,7 +94,7 @@ void WebServer::ClientRcv(HttpConn *client)
     ret = client->Read();
     if (ret < 0 && errno != EAGAIN) // Et可以异常返回
     {
-        LOG_ERROR("recv client[%d] %s", client->GetFd(), strerror(errno));
+        LOG_ERROR("client[%d] recv %s", client->GetFd(), strerror(errno));
         ClientClose(client);
         return;
     }
@@ -121,7 +115,7 @@ void WebServer::ClientWri(HttpConn *client)
     ret = client->Write();
     if (ret < 0 && errno != EAGAIN)
     { // Et可以异常返回
-        LOG_ERROR("send client[%d] %s", client->GetFd(), strerror(errno));
+        LOG_ERROR("client[%d] send %s", client->GetFd(), strerror(errno));
         ClientClose(client);
         return;
     }

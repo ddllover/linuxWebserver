@@ -1,11 +1,4 @@
-/*
- * @Author       : mark
- * @Date         : 2020-06-25
- * @copyleft Apache 2.0
- */
-#ifndef HTTP_RESPONSE_H
-#define HTTP_RESPONSE_H
-
+#pragma once
 #include <unordered_map>
 #include <fcntl.h>    // open
 #include <unistd.h>   // close
@@ -62,5 +55,3 @@ public:
 
     int Code() const { return code_; }
 };
-
-#endif // HTTP_RESPONSE_H

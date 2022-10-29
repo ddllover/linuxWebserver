@@ -19,7 +19,7 @@ int main(int args, char *argv[])
     }
     // Mysql 功能
     SqlConnPool::Instance()->Init("localhost", 3306, "root", "", "yourdb", 6); // Mysql配置 连接池数量
-    if (flag) Log::getLog().Init(4);
+    if (flag) Log::getLog().Init(1);
     WebServer server(8); //线程数
     server.InitWebserver("127.0.0.1", "1234",true,true,1000);//port
     server.Process();
