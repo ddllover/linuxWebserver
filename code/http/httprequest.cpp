@@ -1,7 +1,7 @@
 #include "httprequest.h"
 using namespace std;
 
-const unordered_set<string> HttpRequest::DEFAULT_HTML{
+const unordered_set<string_view> HttpRequest::DEFAULT_HTML{
     "/index",
     "/register",
     "/login",
@@ -10,7 +10,7 @@ const unordered_set<string> HttpRequest::DEFAULT_HTML{
     "/picture",
 };
 
-const unordered_map<string, int> HttpRequest::DEFAULT_HTML_TAG{
+const unordered_map<string_view, int> HttpRequest::DEFAULT_HTML_TAG{
     {"/register.html", 0},
     {"/login.html", 1},
 };

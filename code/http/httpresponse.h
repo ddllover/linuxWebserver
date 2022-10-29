@@ -17,16 +17,16 @@ protected:
 
 private:
     int code_;
-    static const std::unordered_map<std::string, std::string> SUFFIX_TYPE;
-    static const std::unordered_map<int, std::string> CODE_STATUS;
-    static const std::unordered_map<int, std::string> CODE_PATH;
+    static const std::unordered_map<std::string_view, std::string_view> SUFFIX_TYPE;
+    static const std::unordered_map<int, std::string_view> CODE_STATUS;
+    static const std::unordered_map<int, std::string_view> CODE_PATH;
 
     void AddStateLine_(Buff &buff);
     void AddHeader_(Buff &buff);
     void AddContent_(Buff &buff);
-    void ErrorContent(Buff &buff, std::string message);
+    void ErrorContent(Buff &buff, std::string_view message);
     void ErrorHtml_();
-    std::string GetFileType_();
+    std::string_view GetFileType_();
 
 public:
     static std::string srcDir;

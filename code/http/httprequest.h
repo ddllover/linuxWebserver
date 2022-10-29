@@ -15,8 +15,9 @@ class HttpRequest
 {
 protected:
     bool isKeepAlive_;
-    std::string method_, path_, version_, body_;
-    std::unordered_map<std::string, std::string> header_;
+    std::string path_, body_;
+    std::string_view method_, version_;
+    std::unordered_map<std::string_view, std::string_view> header_;
     std::unordered_map<std::string, std::string> post_;
 private:
     enum PARSE_STATE
@@ -25,8 +26,8 @@ private:
         HEADERS,
         FINISH,
     }state_;
-    static const std::unordered_set<std::string> DEFAULT_HTML;
-    static const std::unordered_map<std::string, int> DEFAULT_HTML_TAG;
+    static const std::unordered_set<std::string_view> DEFAULT_HTML;
+    static const std::unordered_map<std::string_view, int> DEFAULT_HTML_TAG;
 
     bool ParseHeader_(Buff &buff);
     bool ParseBody_(Buff &buff);

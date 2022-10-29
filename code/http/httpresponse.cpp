@@ -2,7 +2,7 @@
 
 using namespace std;
 string HttpResponse::srcDir;
-const unordered_map<string, string> HttpResponse::SUFFIX_TYPE = {
+const unordered_map<string_view, string_view> HttpResponse::SUFFIX_TYPE = {
     { ".html",  "text/html" },
     { ".xml",   "text/xml" },
     { ".xhtml", "application/xhtml+xml" },
@@ -24,14 +24,14 @@ const unordered_map<string, string> HttpResponse::SUFFIX_TYPE = {
     { ".js",    "text/javascript "},
 };
 
-const unordered_map<int, string> HttpResponse::CODE_STATUS = {
+const unordered_map<int, string_view> HttpResponse::CODE_STATUS = {
     { 200, "OK" },
     { 400, "Bad Request" },
     { 403, "Forbidden" },
     { 404, "Not Found" },
 };
 
-const unordered_map<int, string> HttpResponse::CODE_PATH = {
+const unordered_map<int, string_view> HttpResponse::CODE_PATH = {
     { 400, "/400.html" },
     { 403, "/403.html" },
     { 404, "/404.html" },
@@ -81,7 +81,9 @@ void HttpResponse::AddHeader_(Buff& buff) {
     } else{
         buff.Append("close\r\n");
     }
-    buff.Append("Content-type: " + GetFileType_() + "\r\n");
+    buff.Append("Content-type: ");
+    buff.Append(string(GetFileType_()));
+    buff.Append("\r\n");
 }
 
 void HttpResponse::AddContent_(Buff& buff) {
@@ -111,7 +113,7 @@ void HttpResponse::UnmapFile() {
     }
 }
 
-string HttpResponse::GetFileType_() {
+string_view HttpResponse::GetFileType_() {
     /* 判断文件类型 */
     string::size_type idx = path_.find_last_of('.');
     if(idx == string::npos) {
@@ -124,7 +126,7 @@ string HttpResponse::GetFileType_() {
     return "text/plain";
 }
 
-void HttpResponse::ErrorContent(Buff& buff, string message) 
+void HttpResponse::ErrorContent(Buff& buff, string_view message) 
 {
     string body;
     string status;
@@ -136,7 +138,7 @@ void HttpResponse::ErrorContent(Buff& buff, string message)
         status = "Bad Request";
     }
     body += to_string(code_) + " : " + status  + "\n";
-    body += "<p>" + message + "</p>";
+    body += "<p>" + string(message.data()) + "</p>";
     body += "<hr><em>TinyWebServer</em></body></html>";
 
     buff.Append("Content-length: " + to_string(body.size()) + "\r\n\r\n");
