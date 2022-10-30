@@ -26,7 +26,6 @@ private:
     std::chrono::duration<double, std::milli> timeoutMS_;
     // int timeoutMS_=5000; /* 毫秒MS */
     bool isClose_ = false;
-    char *srcDir_ = nullptr;
     uint32_t listenEvent_ = EPOLLRDHUP;
     uint32_t clientEvent_ = EPOLLONESHOT | EPOLLRDHUP;
     // 组件
@@ -44,18 +43,19 @@ private:
     void ClientClose(HttpConn *client);
     void ClientRcv(HttpConn *client);
     void ClientWri(HttpConn *client);
+    void CloseTimeout();
 
 public: // 配置
-    WebServer(int threadNum) : timeoutMS_(10000)
+    WebServer(int threadNum) : timeoutMS_(1000)
     {
         threadpool_ = make_unique<ThreadPool>(threadNum);
         epoller_ = make_unique<Epoll>();
     }
-    ~WebServer()
-    {
-        if (srcDir_)
-            free(srcDir_);
-    };
+    ~WebServer() //组件有序关闭
+    {   epoller_.reset();
+        servsocket_.reset();
+        threadpool_.reset();
+    }
     void InitWebserver(const char ip[], const char port[], bool clientET = false, bool listenET = false, int timeoutMS = 0)
     {
         servsocket_.reset(new ServSocket(ip, port));
@@ -67,13 +67,13 @@ public: // 配置
         if (timeoutMS > 0)
             timeoutMS_ = std::chrono::milliseconds{timeoutMS};
 
-        srcDir_ = getcwd(nullptr, 256);
+        char *srcDir_ = getcwd(nullptr, 256);
         assert(srcDir_);
         strncat(srcDir_, "/resources/", 16);
         HttpResponse::srcDir = srcDir_;
         {
             LOG_INFO("========== Server init ==========");
-            LOG_INFO("Ip:%s Port:%s", ip, port);
+            LOG_INFO("Ip:%s Port:%s socket:%d", ip, port,servsocket_->getSocket());
             LOG_INFO("Listen Mode: %s, OpenConn Mode: %s", listenET ? "ET" : "LT", clientET ? "ET" : "LT");
             // LOG_INFO("LogSys level: %d", logLevel);
             LOG_INFO("srcDir: %s", srcDir_);

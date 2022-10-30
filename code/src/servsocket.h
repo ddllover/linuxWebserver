@@ -36,8 +36,8 @@ public:
         assert(std::stoi(port) <= 65535 && std::stoi(port) >=1024);
         // ？？？关闭连接相关
         struct linger optLinger = {0};
-        // optLinger.l_onoff = 1;
-        // optLinger.l_linger = 1;
+        optLinger.l_onoff = 1;
+        optLinger.l_linger = 1;
         setsockopt(servSocket_, SOL_SOCKET, SO_LINGER, &optLinger, sizeof(optLinger));
         // 端口复用
         int optval = 1;
@@ -56,25 +56,15 @@ public:
         int clientSocket = accept(servSocket_, (struct sockaddr *)clientIpv4, &clientIpv4Len);
         if (clientSocket < 0)
         {
-            // perror("client accept");
+            //perror("client accept");
         }
         return clientSocket;
     }
     int getSocket() const { return servSocket_; }
-    /*
-    int Read(int clientSocket,char buf[]){
-        return read(clientSocket,buf,sizeof(buf));
-    }
-    int Write(int clientSocket,const char buf[]){
-        return write(clientSocket,buf,sizeof(buf));
-    }
-    int Close(int clientSocket){
-        return close(clientSocket);
-    }*/
     ~ServSocket()
     {
 #ifdef __linux__
-        assert(close(servSocket_) >= 0);
+    close(servSocket_);
 #elif _WIN32
         assert(closesocket(servSocket) >= 0);
 #endif

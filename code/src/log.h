@@ -139,7 +139,7 @@ private:
 public:
     ~Log() { shutdown(); }
     void shutdown()
-    {
+    {   LOG_INFO("Log close!");
         {
             std::lock_guard lk(logmutex_);
             isOpen_ = false;
@@ -148,6 +148,8 @@ public:
         if (logthread_->joinable())
         {
             logthread_->join();
+            std::lock_guard lk(logmutex_);
+            write(filefd_,crubuf_->data(),crubuf_->size());
         }
         if (filefd_ > 0)
             close(filefd_);

@@ -41,7 +41,7 @@ private:
 
 public:
     HttpRequest() { RequestClear(); }
-    ~HttpRequest() = default;
+    ~HttpRequest() {};
     void RequestClear()
     {
         isKeepAlive_ = false;

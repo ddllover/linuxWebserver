@@ -44,21 +44,28 @@ void WebServer::Process()
                 }
             }
         }
-        auto now=system_clock::now();
-        while(!timeque_.empty()){
-            auto tmp=timeque_.front();
-            if(now-tmp.first>timeoutMS_){
-                timeque_.pop();
-                if(now-users_[tmp.second].timepoint_>timeoutMS_){ //确实超时 删除
-                    LOG_INFO("client[%d] time out %d ms",tmp.second,timeoutMS_.count());
-                    ClientClose(&users_[tmp.second]);
-                }
-            }
-            else break;
-        }
+        CloseTimeout();
     }
 }
-
+void WebServer::CloseTimeout()
+{
+    auto now = system_clock::now();
+    while (!timeque_.empty())
+    {
+        auto tmp = timeque_.front();
+        if (now - tmp.first > timeoutMS_)
+        {
+            timeque_.pop();
+            if (now - users_[tmp.second].timepoint_ > timeoutMS_)
+            { // 确实超时 删除
+                LOG_INFO("client[%d] time out %.0d ms", tmp.second, timeoutMS_.count());
+                ClientClose(&users_[tmp.second]);
+            }
+        }
+        else
+            break;
+    }
+}
 void WebServer::ClientAccept()
 {
     struct sockaddr_in addr = {0};
@@ -80,7 +87,7 @@ void WebServer::ClientAccept()
         users_[fd].Init(fd, addr);
         timeque_.push({system_clock::now(), fd});
         epoller_->AddFd(fd, EPOLLIN | clientEvent_);
-        LOG_INFO("Client[%d](%s:%d) accept, userCount:%d", fd, users_[fd].GetIP(), users_[fd].GetPort(),userCount_.load());
+        LOG_INFO("Client[%d](%s:%d) accept, userCount:%d", fd, users_[fd].GetIP(), users_[fd].GetPort(), userCount_.load());
     } while (listenEvent_ & EPOLLET);
 }
 
