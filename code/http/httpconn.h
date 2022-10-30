@@ -4,6 +4,7 @@
 #include <arpa/inet.h> // sockaddr_in
 #include <stdlib.h>    // atoi()
 #include <errno.h>
+#include <chrono>
 
 #include "../src/simvector.h"
 #include "../src/log.h"
@@ -17,7 +18,6 @@ private:
     int fd_;
     struct sockaddr_in addr_;
     bool isClose_;
-
     struct file
     {
         char *data_;
@@ -27,12 +27,14 @@ private:
     Buff sendBuff_; // 写缓冲区
 
     //HttpRequest request_;
-    HttpResponse response_;
+    //HttpResponse response_;
 
 public:
     static bool isET;
-    HttpConn()
-    {
+    std::chrono::system_clock::time_point timepoint_;
+    HttpConn():HttpResponse()
+    {   
+        timepoint_=std::chrono::system_clock::now();
         fd_ = -1;
         addr_ = {0};
         isClose_ = true;
@@ -41,9 +43,13 @@ public:
     {
         Close();
     }
-    void init(int fd, const sockaddr_in &addr)
-    {
+    void Update(){
+        timepoint_=std::chrono::system_clock::now();
+    }
+    void Init(int fd, const sockaddr_in &addr)
+    {   
         assert(fd > 0);
+        Update();
         addr_ = addr;
         fd_ = fd;
         sendBuff_.clear();
@@ -54,7 +60,7 @@ public:
     }
     void Close()
     {
-        response_.UnmapFile();
+        UnmapFile();
         if (!isClose_)
         {
             isClose_ = true;

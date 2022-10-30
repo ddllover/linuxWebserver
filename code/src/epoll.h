@@ -1,6 +1,5 @@
 #pragma once
-#define LINUX
-#ifdef LINUX
+#ifdef __linux__
 #include <sys/epoll.h> //epoll_ctl()
 #else
 #endif
@@ -14,13 +13,7 @@ class Epoll
 {
 private:
     int epfd_;
-    // int fdCnt; //需要维护线程安全的先删除
     SimVector<struct epoll_event> events_; //注意线程不安全的
-    
-    //uint32_t events_;
-    //int listenEvent_ = EPOLLRDHUP;
-    //int connEvent_ = EPOLLONESHOT | EPOLLRDHUP;
-
 public:
     Epoll(int maxEvent = 1024, int epollnum = 512) : events_(maxEvent)
     {
@@ -50,7 +43,7 @@ public:
         ev.events = events;
         if (epoll_ctl(epfd_, EPOLL_CTL_MOD, fd, &ev) < 0)
         {
-            perror("epoll mod error");
+            perror("epoll mod");
             return false;
         }
         return true;

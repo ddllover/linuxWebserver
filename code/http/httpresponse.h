@@ -37,7 +37,7 @@ public:
         mmFileStat_ = {0};
     }
     ~HttpResponse()
-    {
+    {  
         UnmapFile();
     }
     void ResponseClear()

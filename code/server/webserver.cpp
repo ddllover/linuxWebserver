@@ -1,21 +1,16 @@
 #include "webserver.h"
 
 using namespace std;
-
+using std::chrono::system_clock;
 void WebServer::Process()
 {
     if (isClose_)
         return;
     epoller_->AddFd(servsocket_->getSocket(), listenEvent_ | EPOLLIN);
     LOG_INFO("========== Server start ==========");
-    int timeMS = -1;
     while (!isClose_)
     {
-        if (timeoutMS_ > 0)
-        {
-            timeMS = timer_->GetNextTick();
-        }
-        const auto &eventret = epoller_->Wait(timeMS);
+        const auto &eventret = epoller_->Wait(-1);
         for (int i = 0; i < eventret.size(); i++)
         {
             int fd = eventret[i].data.fd;
@@ -25,28 +20,41 @@ void WebServer::Process()
                 ClientAccept();
             }
             else
-            {
+            { // 处理收发
                 assert(users_.find(fd) != users_.end());
                 auto client = &users_[fd];
-                if (events & EPOLLIN)
-                {
-                    if (timeoutMS_ > 0)
-                        timer_->adjust(client->GetFd(), timeoutMS_);
-                    threadpool_->AddTask(std::bind(&WebServer::ClientRcv, this, client));
-                }
-                else if (events & EPOLLOUT)
-                {
-                    if (timeoutMS_ > 0)
-                        timer_->adjust(client->GetFd(), timeoutMS_);
-                    threadpool_->AddTask(std::bind(&WebServer::ClientWri, this, client));
-                }
-                else if (events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR))
+                if (events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR))
                 {
                     ClientClose(&users_[fd]);
                 }
                 else
-                    LOG_ERROR("Unexpected event");
+                {
+                    client->Update();
+                    timeque_.push({system_clock::now(), fd});
+                    if (events & EPOLLIN)
+                    {
+                        threadpool_->AddTask(std::bind(&WebServer::ClientRcv, this, client));
+                    }
+                    else if (events & EPOLLOUT)
+                    {
+                        threadpool_->AddTask(std::bind(&WebServer::ClientWri, this, client));
+                    }
+                    else
+                        LOG_ERROR("Unexpected event");
+                }
             }
+        }
+        auto now=system_clock::now();
+        while(!timeque_.empty()){
+            auto tmp=timeque_.front();
+            if(now-tmp.first>timeoutMS_){
+                timeque_.pop();
+                if(now-users_[tmp.second].timepoint_>timeoutMS_){ //确实超时 删除
+                    LOG_INFO("client[%d] time out %d ms",tmp.second,timeoutMS_.count());
+                    ClientClose(&users_[tmp.second]);
+                }
+            }
+            else break;
         }
     }
 }
@@ -64,17 +72,15 @@ void WebServer::ClientAccept()
         else if (userCount_ >= MAX_FD)
         {
             close(fd);
+
             LOG_WARN("Clients is full!");
             return;
         }
         userCount_++;
-        users_[fd].init(fd, addr);
-        LOG_INFO("Client[%d](%s:%d) accept, userCount:%d", fd, users_[fd].GetIP(), users_[fd].GetPort(), userCount_);
-        if (timeoutMS_ > 0)
-        {
-            timer_->add(fd, timeoutMS_, std::bind(&WebServer::ClientClose, this, &users_[fd]));
-        }
+        users_[fd].Init(fd, addr);
+        timeque_.push({system_clock::now(), fd});
         epoller_->AddFd(fd, EPOLLIN | clientEvent_);
+        LOG_INFO("Client[%d](%s:%d) accept, userCount:%d", fd, users_[fd].GetIP(), users_[fd].GetPort(),userCount_.load());
     } while (listenEvent_ & EPOLLET);
 }
 
@@ -84,7 +90,7 @@ void WebServer::ClientClose(HttpConn *client)
     epoller_->DelFd(client->GetFd());
     client->Close();
     userCount_--;
-    LOG_INFO("Client[%d](%s:%d) quit, UserCount:%d", client->GetFd(), client->GetIP(), client->GetPort(), userCount_);
+    LOG_INFO("Client[%d](%s:%d) quit, UserCount:%d", client->GetFd(), client->GetIP(), client->GetPort(), userCount_.load());
 }
 
 void WebServer::ClientRcv(HttpConn *client)

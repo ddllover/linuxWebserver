@@ -6,16 +6,10 @@
 #include <future>
 #include <ctime>
 #include<mutex>
+#include <map>
 using namespace std;
-mutex one;
-int t;
-void make(){
-    
-    //one.lock();
-    //one.lock();
-    t=1;
-    //unique_lock<mutex> lk(one);
-}
+
+
 int main(int args,char*argv[])
 {   
     chrono::system_clock time;
@@ -43,13 +37,12 @@ int main(int args,char*argv[])
     //unique_lock<mutex> lk(one);
     //unique_lock<mutex> lm(one);
     //make(1);
-    one.lock();
-    one.lock();
-    thread a(make);
     //thread b(make);
-    a.join();
     //b.join();
+    char t[]="@";
+    cout<<sizeof(t)<<endl;
     auto end = time.now();
+    //std::chrono::duration_values difft();
     std::chrono::duration<double> diff = end - start;
     cout << diff.count() << '\n';
     return 0;

@@ -1,9 +1,11 @@
 CXX = g++
-CFLAGS = -std=c++20 -O2  -Wall -g 
+CFLAGS = -std=c++20 -O2 -Wall -g 
+#CFLAGS+=-U__FILE__ -D__FILE__='"$(subst $(dir $<),,$<)"'
 
 TARGET = server
-OBJS = ../code/pool/*.cpp ../code/timer/*.cpp \
-       ../code/http/*.cpp ../code/server/*.cpp \
+OBJS = ../code/http/*.cpp \
+	   ../code/pool/*.cpp \
+	   ../code/server/*.cpp \
        ../code/main.cpp
 
 all: $(OBJS)

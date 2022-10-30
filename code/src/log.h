@@ -21,7 +21,7 @@
         Log &ptr = Log::getLog();                                         \
         if (ptr.isOpen() && ptr.getLevel() <= level)                      \
         {                                                                 \
-            ptr.append(level, __DATE__, __TIME__, format, ##__VA_ARGS__); \
+            ptr.append(level, __FILE__,__FUNCTION__,__LINE__, format, ##__VA_ARGS__); \
         }                                                                 \
     }
 
@@ -72,10 +72,11 @@ private:
                     ptr->updateFile();
                     if (write(ptr->filefd_, ptr->nexbuf_->data(), ptr->nexbuf_->size()) < 0)
                     {
-                        LOG_ERROR("log write %s\n", strerror(errno));
+                        LOG_ERROR("log write %s", strerror(errno));
                     }
                     if (ptr->nexbuf_->capacity() > 1.5 * ptr->maxBufsize_)
-                    {
+                    {   
+                        LOG_WARN("log write over");
                         ptr->nexbuf_->shift_to(ptr->maxBufsize_);
                     }
                     ptr->nexbuf_->clear();
@@ -151,7 +152,7 @@ public:
         if (filefd_ > 0)
             close(filefd_);
     }
-    void Init(int level = 4, std::string path = "./log", int buflen = 100000)
+    void Init(int level = 4,int buflen = 100000, std::string path = "./log" )
     {
         if (isOpen_)
             shutdown();
@@ -179,7 +180,7 @@ public:
     {
         return level_;
     }
-    void append(int level, const char *date, const char *time, const char *format, ...)
+    void append(int level, const char *filename,const char * fun, int line, const char *format, ...)
     {
 
         va_list vaList;
@@ -197,6 +198,10 @@ public:
             {
             case 0:
                 crubuf_->Append("[debug]: ", 9);
+                crubuf_->Append(filename);
+                crubuf_->Append("@");
+                crubuf_->Append(fun);
+                crubuf_->Append("@"+std::__cxx11::to_string(line)+": ");
                 break;
             case 1:
                 crubuf_->Append("[info] : ", 9);

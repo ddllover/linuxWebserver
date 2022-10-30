@@ -19,13 +19,14 @@ protected:
     std::string_view method_, version_;
     std::unordered_map<std::string_view, std::string_view> header_;
     std::unordered_map<std::string, std::string> post_;
+
 private:
     enum PARSE_STATE
     {
         REQUEST_LINE,
         HEADERS,
         FINISH,
-    }state_;
+    } state_;
     static const std::unordered_set<std::string_view> DEFAULT_HTML;
     static const std::unordered_map<std::string_view, int> DEFAULT_HTML_TAG;
 
@@ -41,6 +42,13 @@ private:
 public:
     HttpRequest() { RequestClear(); }
     ~HttpRequest() = default;
-    void RequestClear();
+    void RequestClear()
+    {
+        isKeepAlive_ = false;
+        method_ = path_ = version_ = body_ = "";
+        state_ = REQUEST_LINE;
+        header_.clear();
+        post_.clear();
+    }
     bool ParseRequest(Buff &buff);
 };

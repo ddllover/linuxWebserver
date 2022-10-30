@@ -142,7 +142,11 @@ public:
         bzero(data_, capacity_);
     }
     void Append (const char * str){
-        Append(str,sizeof(str));
+        while(*str!='\0')
+        {
+            data_[size_++]=*str;
+            str++;
+        }
     }
     void Append(const std::string &str)
     {
@@ -163,7 +167,7 @@ public:
         {
             reserve(capacity_+len);
         }
-        std::copy(str, str + len, end());
+        memcpy(end(),str,len);
         resize(size_+len);
     }
 

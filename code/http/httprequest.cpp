@@ -15,15 +15,6 @@ const unordered_map<string_view, int> HttpRequest::DEFAULT_HTML_TAG{
     {"/login.html", 1},
 };
 
-void HttpRequest::RequestClear()
-{
-    isKeepAlive_=false;
-    method_ = path_ = version_ = body_ = "";
-    state_ = REQUEST_LINE;
-    header_.clear();
-    post_.clear();
-}
-
 bool HttpRequest::ParseRequest(Buff &buff)
 {
     if(REQUEST_LINE != state_) return ParseHeader_(buff);
@@ -46,6 +37,7 @@ bool HttpRequest::ParseRequest(Buff &buff)
                 path_ += ".html";
             }
         }
+        LOG_DEBUG("path: %s",path_.data());
         return ParseHeader_(buff);
     }
     //LOG_ERROR("RequestLine Error");
