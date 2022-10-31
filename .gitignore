@@ -6,7 +6,9 @@
 !LICENSE
 !makefile
 !Makefile
-
+/bin
+*.out
+/testtime.*
 *.o
 *.1
 *.log

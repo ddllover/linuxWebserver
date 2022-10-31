@@ -5,12 +5,37 @@
 #include <functional>
 #include <future>
 #include <ctime>
-#include<mutex>
+#include <mutex>
 #include <map>
+#include <queue>
+#include <assert.h>
+#include <mysql/mysql.h>
+#include <semaphore>
 using namespace std;
-
-
-int main(int args,char*argv[])
+queue<MYSQL *> connQue_;
+void Init(const char *host, int port, const char *user, const char *pwd, const char *dbName, int connSize = 10)
+{
+    assert(connSize > 0);
+    for (int i = 0; i < connSize; i++)
+    {
+        MYSQL *sql = nullptr;
+        sql = mysql_init(sql);
+        if (!sql)
+        {
+            //cout<<"erro"<<endl;
+            assert(sql);
+        }
+        sql = mysql_real_connect(sql, host, user, pwd,
+                                 dbName, port, nullptr, 0);
+        if (!sql)
+        {
+            cout<<"erro"<<endl;
+        }
+        connQue_.push(sql);
+    }
+    //MAX_CONN_ = connSize;
+}
+int main(int args, char *argv[])
 {   
     chrono::system_clock time;
     auto start = time.now();
@@ -33,16 +58,16 @@ int main(int args,char*argv[])
     /*string m="1235";
     string_view y(m.data(),m.size()-1);
     cout<<y<<'\n';*/
-    //测试unique_lock效率
-    //unique_lock<mutex> lk(one);
-    //unique_lock<mutex> lm(one);
-    //make(1);
-    //thread b(make);
-    //b.join();
-    char t[]="@";
-    cout<<sizeof(t)<<endl;
+    // 测试unique_lock效率
+    // unique_lock<mutex> lk(one);
+    // unique_lock<mutex> lm(one);
+    // make(1);
+    // thread b(make);
+    // b.join();
+    //mysql
+    Init("localhost", 3306, "root", "", "yourdb"); 
     auto end = time.now();
-    //std::chrono::duration_values difft();
+    // std::chrono::duration_values difft();
     std::chrono::duration<double> diff = end - start;
     cout << diff.count() << '\n';
     return 0;

@@ -10,14 +10,11 @@ const unordered_set<string_view> HttpRequest::DEFAULT_HTML{
     "/picture",
 };
 
-const unordered_map<string_view, int> HttpRequest::DEFAULT_HTML_TAG{
-    {"/register.html", 0},
-    {"/login.html", 1},
-};
 
 bool HttpRequest::ParseRequest(Buff &buff)
 {
-    if(REQUEST_LINE != state_) return ParseHeader_(buff);
+    if (REQUEST_LINE != state_)
+        return ParseHeader_(buff);
     static regex patten("^([^ \r\n]*) ([^ \r\n]*) HTTP/([^ \r\n]*)\r\n");
     cmatch subMatch;
     if (regex_search(buff.Peek(), subMatch, patten))
@@ -32,15 +29,17 @@ bool HttpRequest::ParseRequest(Buff &buff)
             path_ = "/index.html";
         }
         else
-        {   auto tmp=DEFAULT_HTML.find(path_);
-            if(tmp!=DEFAULT_HTML.end()){
+        {
+            auto tmp = DEFAULT_HTML.find(path_);
+            if (tmp != DEFAULT_HTML.end())
+            {
                 path_ += ".html";
             }
         }
-        LOG_DEBUG("path: %s",path_.data());
+        LOG_DEBUG("method %s ver %s path: %s",method_.data(),version_.data(), path_.data());
         return ParseHeader_(buff);
     }
-    //LOG_ERROR("RequestLine Error");
+    // LOG_ERROR("RequestLine Error");
     return false;
 }
 
@@ -52,51 +51,48 @@ bool HttpRequest::ParseHeader_(Buff &buff)
     {
         buff.PeekAdd(subMatch.length());
         header_[subMatch[1].str()] = subMatch[2].str();
+        //LOG_DEBUG()
     }
     return ParseBody_(buff);
 }
 
 bool HttpRequest::ParseBody_(Buff &buff)
 {
-    static regex patten("^([^\r\n]*)\r\n");
+    static regex patten("^\r\n([^\r\n]*)$");
     cmatch subMatch;
     if (regex_search(buff.Peek(), subMatch, patten))
-    {
+    {   //LOG_DEBUG("%s",subMatch.str().data());
         buff.PeekAdd(subMatch.length());
         body_ = subMatch[1].str();
     }
-    else{
+    else
+    {
         return false;
     }
     if (method_ == "POST" && header_["Content-Type"] == "application/x-www-form-urlencoded")
     {
         ParseFromUrlencoded_();
-        if (DEFAULT_HTML_TAG.count(path_))
+        if ("/register.html" == path_|| "/login.html" == path_)
         {
-            int tag = DEFAULT_HTML_TAG.find(path_)->second;
-            LOG_DEBUG("Tag:%d", tag);
-            if (tag == 0 || tag == 1)
+            if (UserVerify(post_["username"], post_["password"], "/login.html" == path_))
             {
-                bool isLogin = (tag == 1);
-                if (UserVerify(post_["username"], post_["password"], isLogin))
-                {
-                    path_ = "/welcome.html";
-                }
-                else
-                {
-                    path_ = "/error.html";
-                }
+                path_ = "/welcome.html";
+            }
+            else
+            {
+                path_ = "/error.html";
             }
         }
     }
     state_ = FINISH;
-    isKeepAlive_=header_["Connection"]== "keep-alive"&&version_ == "1.1";
-    LOG_DEBUG("Body:%s, len:%d", body_.c_str(), body_.size());
+    isKeepAlive_ = header_["Connection"] == "keep-alive" && version_ == "1.1";
+    LOG_DEBUG("Body:%s, len:%d", body_.data(), body_.size());
     return true;
 }
 
 void HttpRequest::ParseFromUrlencoded_()
 {
+    LOG_DEBUG("Body:%s, len:%d", body_.data(), body_.size());
     if (body_.size() == 0)
     {
         return;
@@ -120,7 +116,7 @@ void HttpRequest::ParseFromUrlencoded_()
             body_[i] = ' ';
             break;
         case '%':
-            num=stoi(body_.substr(i+1,2),nullptr,16);
+            num = stoi(body_.substr(i + 1, 2), nullptr, 16);
             body_[i + 2] = num % 10 + '0';
             body_[i + 1] = num / 10 + '0';
             i += 2;
@@ -136,7 +132,7 @@ void HttpRequest::ParseFromUrlencoded_()
         }
     }
     assert(j <= i);
-    if (post_.count(key) == 0 && j < i)
+    if (post_.find(key) == post_.end() && j < i)
     {
         value = body_.substr(j, i - j);
         post_[key] = value;

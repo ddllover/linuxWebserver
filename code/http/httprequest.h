@@ -8,8 +8,7 @@
 
 #include "../src/simvector.h"
 #include "../src/log.h"
-#include "../pool/sqlconnpool.h"
-#include "../pool/sqlconnRAII.h"
+#include "../sql/sqlconnpool.h"
 
 class HttpRequest
 {
@@ -17,7 +16,7 @@ protected:
     bool isKeepAlive_;
     std::string path_, body_;
     std::string_view method_, version_;
-    std::unordered_map<std::string_view, std::string_view> header_;
+    std::unordered_map<std::string, std::string> header_;
     std::unordered_map<std::string, std::string> post_;
 
 private:
@@ -28,7 +27,6 @@ private:
         FINISH,
     } state_;
     static const std::unordered_set<std::string_view> DEFAULT_HTML;
-    static const std::unordered_map<std::string_view, int> DEFAULT_HTML_TAG;
 
     bool ParseHeader_(Buff &buff);
     bool ParseBody_(Buff &buff);

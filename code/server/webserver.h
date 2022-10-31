@@ -10,14 +10,12 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include "../pool/sqlconnpool.h"
-#include "../pool/threadpool.h"
-#include "../pool/sqlconnRAII.h"
+#include "../sql/sqlconnpool.h"
 #include "../http/httpconn.h"
 #include "../src/epoll.h"
 #include "../src/servsocket.h"
 #include "../src/log.h"
-
+#include "../src/threadpool.h"
 class WebServer
 {
 private:
@@ -48,8 +46,8 @@ private:
 public: // 配置
     WebServer(int threadNum) : timeoutMS_(1000)
     {
-        threadpool_ = make_unique<ThreadPool>(threadNum);
-        epoller_ = make_unique<Epoll>();
+        threadpool_ =std::make_unique<ThreadPool>(threadNum);
+        epoller_ = std::make_unique<Epoll>();
     }
     ~WebServer() //组件有序关闭
     {   epoller_.reset();
@@ -69,15 +67,12 @@ public: // 配置
 
         char *srcDir_ = getcwd(nullptr, 256);
         assert(srcDir_);
-        strncat(srcDir_, "/resources/", 16);
-        HttpResponse::srcDir = srcDir_;
+        HttpResponse::srcDir = std::string(srcDir_)+"/resources/";
         {
             LOG_INFO("========== Server init ==========");
             LOG_INFO("Ip:%s Port:%s socket:%d", ip, port,servsocket_->getSocket());
             LOG_INFO("Listen Mode: %s, OpenConn Mode: %s", listenET ? "ET" : "LT", clientET ? "ET" : "LT");
-            // LOG_INFO("LogSys level: %d", logLevel);
             LOG_INFO("srcDir: %s", srcDir_);
-            // LOG_INFO("SqlConnPool num: %d, ThreadPool num: %d", connPoolNum, threadNum);
         }
     }
     // 对外接口

@@ -8,7 +8,6 @@
 
 #include "../src/simvector.h"
 #include "../src/log.h"
-#include "../pool/sqlconnRAII.h"
 #include "httprequest.h"
 #include "httpresponse.h"
 

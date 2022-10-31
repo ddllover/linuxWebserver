@@ -154,12 +154,12 @@ public:
         if (filefd_ > 0)
             close(filefd_);
     }
-    void Init(int level = 4,int buflen = 100000, std::string path = "./log" )
-    {
+    void Init( int level = 4,int buflen = 100000, std::string path = "./log" )
+    {   
         if (isOpen_)
             shutdown();
-
-        isOpen_ = true;
+        isOpen_=true;
+        //isOpen_ = true;
         level_ = level;
         strcpy(path_, path.data());
         maxBufsize_ = buflen;
