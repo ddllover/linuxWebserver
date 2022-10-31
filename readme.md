@@ -1,57 +1,37 @@
 # WebServer
-用C++实现的高性能服务器，经过webbenchh压力测试可以实现上万的QPS
+
+用C++实现的Linux高性能服务器，经过webbenchh压力测试可以实现上万的QPS
 
 ## 功能
-* 使用正则解析HTTP请求报文，可以处理静态资源请求
-* 用最小堆实现的定时器，支持HTTP长连接以及超时断开
-* 采用epoll ET边沿触发模式作为IO复用技术
-* 实现线程池，主线程响应IO事件，工作线程处理IO事件，实现Reactor的IO模式
-* 实现自动增长缓冲区，作为HTTP连接的接收与发送的缓冲区
-* 实现数据库连接池，提高对数据库操作的性能
-* 通过访问数据库操作实现用户注册、登录功能
-* 通过阻塞队列实现异步日志系统，记录服务器运行状态
+
+* 使用正则解析HTTP get/post 请求报文,string_view存储结果避免拷贝
+* 使用队列避免排序常数O(1)实现的定时器，支持HTTP长连接以及超时断开
+* 采用epoll ET/LT IO复用技术
+* 实现线程池，主线程负责连接和关闭，工作线程负责收发网络数据，实现Reactor的IO模式
+* 线程池对任务处理是抽象层面，通过主线程的epoll的EPOLLONESHOT事件模式，保证处理请求是有序的。
+* 实现数据库连接池，提高对数据库操作的性能,通过访问数据库操作实现用户注册、登录功能
+* 双缓冲区异步日志系统，记录服务器运行状态，使其对性能的影响只有不到20%
+* 对访问资源建立缓冲区，采用LRU策略，减少读取资源的IO操作
+
+## 模板
+
+* log.h  采用单例模式,通用的可以安全关闭的双缓冲异步日志
+* safequeue.h 线程安全的队列
+* simvector.h 避免构造函数的，以及分配器的简单数据类型的vector，并提供char类型特化
+* threadpool.h 可以返回任务处理结果的线程池，并极力降低锁本身占用的资源
+
 
 ## 环境要求
+
 * Linux
-* C++14
+* C++17
 * MySql
 
-## 目录树
-```
-.
-├── code           源代码
-│   ├── buffer
-│   ├── config
-│   ├── http
-│   ├── log
-│   ├── timer
-│   ├── pool
-│   ├── server
-│   └── main.cpp
-├── test           单元测试
-│   ├── Makefile
-│   └── test.cpp
-├── resources      静态资源
-│   ├── index.html
-│   ├── image
-│   ├── video
-│   ├── js
-│   └── css
-├── bin            可执行文件
-│   └── server
-├── log            日志文件
-├── webbench-1.5   压力测试
-├── build          
-│   └── Makefile
-├── Makefile
-├── LICENSE
-└── readme.md
-```
-
-
 ## 项目启动
+
 需要先配置好对应的数据库
-```bash
+
+```mysql
 // 建立yourdb库
 create database yourdb;
 
@@ -68,10 +48,11 @@ INSERT INTO user(username, passwd) VALUES('name', 'passwd');
 
 ```bash
 make
-./bin/server
+./bin/server -p 端口 -t 线程数 -l 日志开关 -r 日志等级 -s 连接池
 ```
 
 ## 单元测试
+
 ```bash
 cd test
 make
@@ -79,17 +60,17 @@ make
 ```
 
 ## 压力测试
+
 ```bash
 ./webbench-1.5/webbench -c 10000 -t 10 http://ip:port/
 ```
-* 测试环境: Ubuntu:19.10 cpu:i5-8400 内存:8G 
-* QPS 9000~10000
 
-## TODO
-* config配置
-* 完善单元测试
-* 实现循环缓冲区
-* HTTPS加密(Cryto++库)
-* 登录 cookie/session
+* QPS 21000~22000
 
+## 参考
 
+[TinyWebServer](https://github.com/Yoka416/TinyWebServer)
+[LINUX手册](https://linux.die.net/)
+[C++手册](https://zh.cppreference.com/w/cpp)
+[C++线程池](https://wangpengcheng.github.io/2019/05/17/cplusplus_theadpool/)
+[HTTP协议](https://zh.wikipedia.org/wiki/%E8%B6%85%E6%96%87%E6%9C%AC%E4%BC%A0%E8%BE%93%E5%8D%8F%E8%AE%AE)

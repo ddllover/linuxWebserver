@@ -1,14 +1,14 @@
-
-/bin
 *.out
 *.o
 *.1
 *.log
 *.exe
 /.vscode
+/bin/
 
 !*.cpp
 !*.h
 !LICENSE
 !makefile
 !Makefile
+!readme.md
