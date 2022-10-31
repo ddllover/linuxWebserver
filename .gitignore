@@ -1,16 +1,14 @@
 
-!*.*
-!*/
-!*.cpp
-!*.h
-!LICENSE
-!makefile
-!Makefile
 /bin
 *.out
-/testtime.*
 *.o
 *.1
 *.log
 *.exe
 /.vscode
+
+!*.cpp
+!*.h
+!LICENSE
+!makefile
+!Makefile
