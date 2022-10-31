@@ -1,6 +1,6 @@
 #include <list>
 #include <unordered_map>
-
+#include <mutex>
 using namespace std;
 
 template <typename KEY, typename VALUE>
@@ -18,16 +18,17 @@ private:
     };
     list<Node> list_; // 删尾 提头
     unordered_map<KEY, decltype(list_.begin())> map_;
-
+    std::mutex mutex_;
 public:
-    LRUCache(int capacity)
+    LRUCache(int capacity=10000000)//10M
     {
         capacity_ = capacity;
         size_ = 0;
     }
     ~LRUCache() {}
     auto find(KEY key) -> decltype(list_.begin())
-    {
+    {   
+        std::lock_guard<std::mutex> lk(mutex_);
         auto it = map_.find(key);
         if (it != map_.end())
         { // 指向pos之前,避免删除重新构造
@@ -42,7 +43,7 @@ public:
         return list_.end();
     }
     void put(KEY key, VALUE value, int size = 1)
-    {
+    {   std::lock_guard<std::mutex> lk(mutex_);
         auto it = map_.find(key);
         if (it != map_.end()) // 更新
         {

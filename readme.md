@@ -19,6 +19,7 @@
 * safequeue.h 线程安全的队列
 * simvector.h 避免构造函数的，以及分配器的简单数据类型的vector,自已存在一套内存增长的策略,并提供char类型特化,
 * threadpool.h 可以返回任务处理结果的线程池，并极力降低锁本身占用的资源
+* LRUCache.h 一个LRU策略的模板类，可以定量每个节点所占的大小
 
 ## 环境要求
 
@@ -47,7 +48,7 @@ INSERT INTO user(username, passwd) VALUES('name', 'passwd');
 
 ```bash
 make
-./bin/server -p 端口 -t 线程数 -l 日志开关 -r 日志等级 -s 连接池
+./bin/server p 端口 t 线程数 l 日志开关 r 日志等级 s 连接池
 ```
 
 ## 单元测试
