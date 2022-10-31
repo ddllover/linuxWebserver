@@ -34,7 +34,7 @@ public:
         static SqlConnPool connPool;
         return &connPool;
     }
-    void Init(const char *host, int port, const char *user, const char *pwd, const char *dbName, int connSize = 10)
+    void Init(const char *host, int port, const char *user, const char *pwd, const char *dbName, int connSize = 6)
     {
         assert(connSize > 0);
         for (int i = 0; i < connSize; i++)

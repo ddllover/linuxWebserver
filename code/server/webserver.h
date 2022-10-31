@@ -2,6 +2,8 @@
 #include <unordered_map>
 #include <map>
 #include <queue>
+#include <filesystem>
+
 #include <fcntl.h>  // fcntl()
 #include <unistd.h> // close()
 #include <assert.h>
@@ -64,15 +66,13 @@ public: // 配置
         HttpConn::isET = (clientEvent_ & EPOLLET);
         if (timeoutMS > 0)
             timeoutMS_ = std::chrono::milliseconds{timeoutMS};
-
-        char *srcDir_ = getcwd(nullptr, 256);
-        assert(srcDir_);
-        HttpResponse::srcDir = std::string(srcDir_)+"/resources/";
+        HttpResponse::srcDir =std::filesystem::current_path().string()+"/resources/";
+        // std::string(srcDir_)+"/resources/";
         {
             LOG_INFO("========== Server init ==========");
             LOG_INFO("Ip:%s Port:%s socket:%d", ip, port,servsocket_->getSocket());
             LOG_INFO("Listen Mode: %s, OpenConn Mode: %s", listenET ? "ET" : "LT", clientET ? "ET" : "LT");
-            LOG_INFO("srcDir: %s", srcDir_);
+            LOG_INFO("srcDir: %s",HttpResponse::srcDir.data());
         }
     }
     // 对外接口

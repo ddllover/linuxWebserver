@@ -141,25 +141,25 @@ public:
         peek_ = 0;
         bzero(data_, capacity_);
     }
-    void Append (const char * str){
+    void append (const char * str){
         while(*str!='\0')
         {
             data_[size_++]=*str;
             str++;
         }
     }
-    void Append(const std::string &str)
+    void append(const std::string &str)
     {
-        Append(str.data(), str.length());
+        append(str.data(), str.length());
     }
 
-    void Append(const void *data, int len)
+    void append(const void *data, int len)
     {
         assert(data);
-        Append(static_cast<const char *>(data), len);
+        append(static_cast<const char *>(data), len);
     }
 
-    void Append(const char *str, int len)
+    void append(const char *str, int len)
     {
         assert(str);
         //EnsureWriteable(len);

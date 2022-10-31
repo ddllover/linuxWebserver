@@ -7,6 +7,7 @@
 
 #include "../src/log.h"
 #include "../src/simvector.h"
+#include "../src/LRUCache.h"
 #include "httprequest.h"
 
 class HttpResponse : public HttpRequest
@@ -20,7 +21,7 @@ private:
     static const std::unordered_map<std::string_view, std::string_view> SUFFIX_TYPE;
     static const std::unordered_map<int, std::string_view> CODE_STATUS;
     static const std::unordered_map<int, std::string_view> CODE_PATH;
-
+    static LRUCache<std::string,char *> Resource_;
     void AddStateLine_(Buff &buff);
     void AddHeader_(Buff &buff);
     void AddContent_(Buff &buff);

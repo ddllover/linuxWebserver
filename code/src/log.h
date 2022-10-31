@@ -199,23 +199,23 @@ public:
             switch (level)
             {
             case 0:
-                crubuf_->Append("[debug]: ", 9);
-                crubuf_->Append(filename);
-                crubuf_->Append("@");
-                crubuf_->Append(fun);
-                crubuf_->Append("@"+std::__cxx11::to_string(line)+": ");
+                crubuf_->append("[debug]: ");
+                crubuf_->append(filename);
+                crubuf_->append("@");
+                crubuf_->append(fun);
+                crubuf_->append("@"+std::__cxx11::to_string(line)+": ");
                 break;
             case 1:
-                crubuf_->Append("[info] : ", 9);
+                crubuf_->append("[info] : ");
                 break;
             case 2:
-                crubuf_->Append("[warn] : ", 9);
+                crubuf_->append("[warn] : ");
                 break;
             case 3:
-                crubuf_->Append("[error]: ", 9);
+                crubuf_->append("[error]: ");
                 break;
             default:
-                crubuf_->Append("[info] : ", 9);
+                crubuf_->append("[info] : ");
                 break;
             }
 
@@ -223,7 +223,7 @@ public:
             int m = vsnprintf(crubuf_->end(), crubuf_->leftsize(), format, vaList);
             va_end(vaList);
             crubuf_->resize(crubuf_->size() + m);
-            crubuf_->Append("\n", 1);
+            crubuf_->append("\n");
             if (crubuf_->size() > maxBufsize_)
                 logcond_.notify_one();
         }

@@ -11,6 +11,8 @@
 #include <assert.h>
 #include <mysql/mysql.h>
 #include <semaphore>
+#include <filesystem>
+#include "../code/src/LRUCache.h"
 using namespace std;
 queue<MYSQL *> connQue_;
 void Init(const char *host, int port, const char *user, const char *pwd, const char *dbName, int connSize = 10)
@@ -65,7 +67,18 @@ int main(int args, char *argv[])
     // thread b(make);
     // b.join();
     //mysql
-    Init("localhost", 3306, "root", "", "yourdb"); 
+    //Init("localhost", 3306, "root", "", "yourdb"); 
+    LRUCache<int,int> t(8);
+    t.put(1,1,2);
+    t.put(2,2,2);
+    t.put(4,5,2);
+    t.put(6,6,2);
+    t.put(4,4,3);
+    auto it=t.find(4);
+    while(it!=t.end()){
+        cout<<it->key<<it->value<<it->size<<endl;
+        it++;
+    }
     auto end = time.now();
     // std::chrono::duration_values difft();
     std::chrono::duration<double> diff = end - start;

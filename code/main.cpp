@@ -25,9 +25,9 @@ int main(int argc, char *argv[])
         ('r' == opt) && (logrank = atoi(optarg));
     }
     // Mysql 功能
-    SqlConnPool::Instance()->Init("localhost", 3306, "root", "", "yourdb"); // Mysql配置 连接池数量
-    if(logflag) Log::getLog().Init( 1, 1000000);                                // 等级越高过滤越多
-    WebServer server(6);
+    SqlConnPool::Instance()->Init("localhost", 3306, "root", "", "yourdb",sqlnum); // Mysql配置 连接池数量
+    if(logflag) Log::getLog().Init( logrank, 1000000);                                // 等级越高过滤越多
+    WebServer server(threadnum);
     LOG_INFO("SqlConnPool num: %d, ThreadPool num: %d", 6, 6);
     server.InitWebserver("127.0.0.1",to_string(port).c_str(), true, true); // port
     server.Process();
