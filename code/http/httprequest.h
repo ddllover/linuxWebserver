@@ -42,8 +42,8 @@ public:
     ~HttpRequest() {};
     void RequestClear()
     {
-        isKeepAlive_ = false;
-        method_ = path_ = version_ = body_ = "";
+        //isKeepAlive_ = false;
+        //method_ = path_ = version_ = body_ = "";
         state_ = REQUEST_LINE;
         header_.clear();
         post_.clear();

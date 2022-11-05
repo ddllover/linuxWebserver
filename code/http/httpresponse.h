@@ -13,7 +13,7 @@
 class HttpResponse : public HttpRequest
 {
 protected:
-    char *mmFile_;
+    char *mmFile_=nullptr;
     struct stat mmFileStat_;
 
 private:
@@ -33,9 +33,7 @@ public:
     static std::string srcDir;
     HttpResponse() : HttpRequest()
     {
-        code_ = 200;
-        mmFile_ = nullptr;
-        mmFileStat_ = {0};
+        ResponseClear();
     }
     ~HttpResponse()
     {  
@@ -43,13 +41,8 @@ public:
     }
     void ResponseClear()
     {
-        if (mmFile_)
-        {
-            UnmapFile();
-        }
+        UnmapFile();
         code_ = 200;
-        mmFile_ = nullptr;
-        mmFileStat_ = {0};
     }
     void MakeResponse(Buff &buff);
     void UnmapFile();

@@ -84,7 +84,7 @@ bool HttpRequest::ParseBody_(Buff &buff)
             }
         }
     }
-    state_ = FINISH;
+    state_ = REQUEST_LINE;
     isKeepAlive_ = header_["Connection"] == "keep-alive" && version_ == "1.1";
     LOG_DEBUG("Body:%s, len:%d", body_.data(), body_.size());
     return true;
