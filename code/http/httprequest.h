@@ -24,6 +24,7 @@ private:
     {
         REQUEST_LINE,
         HEADERS,
+        BODY,
         FINISH,
     } state_;
     static const std::unordered_set<std::string_view> DEFAULT_HTML;

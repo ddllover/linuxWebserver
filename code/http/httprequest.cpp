@@ -10,7 +10,6 @@ const unordered_set<string_view> HttpRequest::DEFAULT_HTML{
     "/picture",
 };
 
-
 bool HttpRequest::ParseRequest(Buff &buff)
 {
     if (REQUEST_LINE != state_)
@@ -36,7 +35,7 @@ bool HttpRequest::ParseRequest(Buff &buff)
                 path_ += ".html";
             }
         }
-        LOG_DEBUG("method %s ver %s path: %s",method_.data(),version_.data(), path_.data());
+        LOG_DEBUG("method %s ver %s path: %s", method_.data(), version_.data(), path_.data());
         return ParseHeader_(buff);
     }
     // LOG_ERROR("RequestLine Error");
@@ -45,35 +44,56 @@ bool HttpRequest::ParseRequest(Buff &buff)
 
 bool HttpRequest::ParseHeader_(Buff &buff)
 {
+    if (HEADERS != state_)
+        return ParseBody_(buff);
     static regex patten("^([^:\r\n]*): ?([^\r\n]*)\r\n");
     cmatch subMatch;
     while (regex_search(buff.Peek(), subMatch, patten)) //
     {
         buff.PeekAdd(subMatch.length());
         header_[subMatch[1].str()] = subMatch[2].str();
-        //LOG_DEBUG()
+        // LOG_DEBUG()
     }
     return ParseBody_(buff);
 }
 
 bool HttpRequest::ParseBody_(Buff &buff)
 {
-    static regex patten("^\r\n([^\r\n]*)$");
-    cmatch subMatch;
-    LOG_DEBUG("buff %s",buff.data());
-    if (regex_search(buff.Peek(), subMatch, patten))
-    {   LOG_DEBUG("buff %s",buff.data());
-        buff.PeekAdd(subMatch.length());
-        body_ = subMatch[1].str();
-    }
-    else
+    if (HEADERS == state_)
     {
-        return false;
+        static regex patten("^\r\n");
+        cmatch subMatch;
+        // LOG_DEBUG("buff %s",buff.data());
+        if (regex_search(buff.Peek(), subMatch, patten))
+        { // LOG_DEBUG("body %s",body_.data());
+            buff.PeekAdd(subMatch.length());
+            body_ = "";
+            state_ = BODY;
+        }
+        else
+        {
+            return false;
+        }
     }
     if (method_ == "POST" && header_["Content-Type"] == "application/x-www-form-urlencoded")
     {
+        assert(header_.find("Transfer-Encoding") == header_.end());
+        auto it = header_.find("Content-Length");
+        if (it != header_.end())
+        {   
+            int len=stoi(it->second);
+            if(buff.peekleft()>=len){
+                body_=string(buff.Peek(),len);
+                buff.PeekAdd(len);
+            }
+            else return false;
+        }
+        else
+        {
+            assert(0);
+        }
         ParseFromUrlencoded_();
-        if ("/register.html" == path_|| "/login.html" == path_)
+        if ("/register.html" == path_ || "/login.html" == path_)
         {
             if (UserVerify(post_["username"], post_["password"], "/login.html" == path_))
             {
