@@ -149,7 +149,7 @@ public:
         {
             logthread_->join();
             std::lock_guard lk(logmutex_);
-            write(filefd_,crubuf_->data(),crubuf_->size());
+            write(filefd_,(void *)crubuf_->data(),(size_t)crubuf_->size());
         }
         if (filefd_ > 0)
             close(filefd_);
@@ -167,7 +167,7 @@ public:
         crubuf_ = std::make_unique<Buff>(buflen);
         updateFile();
         logthread_ = std::make_unique<std::thread>(Logwork(this));
-        LOG_INFO("LogSys level: %d  buflen: %d", level,buflen);
+        LOG_INFO("LogSys level: %d  Logbuflen: %d", level,buflen);
     }
     static Log &getLog()
     {
