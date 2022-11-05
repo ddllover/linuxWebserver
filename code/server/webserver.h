@@ -66,7 +66,8 @@ public: // 配置
         HttpConn::isET = (clientEvent_ & EPOLLET);
         if (timeoutMS > 0)
             timeoutMS_ = std::chrono::milliseconds{timeoutMS};
-        HttpResponse::srcDir =std::filesystem::current_path().string()+"/resources/";
+        //HttpResponse::srcDir =std::filesystem::current_path().string()+"/resources/";
+        HttpResponse::srcDir="/root/linuxWebserver/resources/";
         // std::string(srcDir_)+"/resources/";
         {
             LOG_INFO("========== Server init ==========");
