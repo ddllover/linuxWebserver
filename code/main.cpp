@@ -15,14 +15,14 @@ int main(int argc, char *argv[])
     bool logflag = true;
     int logrank = 1,threadnum = 6,sqlnum = 6,port=80;
     int opt;
-    const char *str = "p:s:t:l:a:r:";
+    const char *str = "p:s:t:f:l:";
     while ((opt = getopt(argc, argv, str)) != -1)
     {
         ('p' == opt) && (port = atoi(optarg));
         ('s' == opt) && (sqlnum = atoi(optarg));
         ('t' == opt) && (threadnum = atoi(optarg));
-        ('l' == opt) && (logflag = atoi(optarg));
-        ('r' == opt) && (logrank = atoi(optarg));
+        ('f' == opt) && (logflag = atoi(optarg));
+        ('l' == opt) && (logrank = atoi(optarg));
     }
     // Mysql 功能
     SqlConnPool::Instance()->Init("localhost", 3306, "root", "", "yourdb",sqlnum); // Mysql配置 连接池数量

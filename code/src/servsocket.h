@@ -49,7 +49,7 @@ public:
     int Accept(struct sockaddr_in *clientIpv4 = nullptr)
     {
 #ifdef __linux__
-        socklen_t clientIpv4Len = sizeof(sockaddr_in::sin_addr);
+        socklen_t clientIpv4Len = sizeof(sockaddr_in);
 #elif _WIN32
         int clientIpv4Len = sizeof(clientIpv4->sin_addr);
 #endif

@@ -49,7 +49,8 @@ public:
     {   
         assert(fd > 0);
         Update();
-        addr_ = addr;
+        //addr_= addr;
+        memcpy(&addr_,&addr,sizeof(addr));
         fd_ = fd;
         sendBuff_.clear();
         rcvBuff_.clear();

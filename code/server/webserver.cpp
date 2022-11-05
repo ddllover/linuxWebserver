@@ -58,7 +58,7 @@ void WebServer::CloseTimeout()
             timeque_.pop();
             if (now - users_[tmp.second].timepoint_ > timeoutMS_)
             { // 确实超时 删除
-                LOG_INFO("client[%d] time out %.0d ms", tmp.second, timeoutMS_.count());
+                LOG_INFO("client[%d] time out %.0f ms", tmp.second, timeoutMS_.count());
                 ClientClose(&users_[tmp.second]);
             }
         }

@@ -65,8 +65,8 @@ private:
             std::unique_lock lk(ptr->logmutex_);
             while (ptr->isOpen_)
             {
-                auto now = std::chrono::system_clock::now() + std::chrono::duration<double>(100);
-                ptr->logcond_.wait_until(lk, now);
+                static std::chrono::duration<double> waittime(60);
+                ptr->logcond_.wait_for(lk, waittime);
                 std::swap(ptr->crubuf_, ptr->nexbuf_);
                 lk.unlock();
                 ptr->updateFile();
