@@ -57,7 +57,6 @@ private:
     {
     private:
         Log *ptr = nullptr;
-
     public:
         Logwork(Log *obj) { ptr = obj; }
         void operator()()
@@ -154,20 +153,20 @@ public:
         if (filefd_ > 0)
             close(filefd_);
     }
-    void Init( int level = 4,int buflen = 100000, std::string path = "./log" )
+    void Init( int level,int buflen = 1000000, std::string path = "./log" )
     {   
         if (isOpen_)
             shutdown();
         isOpen_=true;
-        //isOpen_ = true;
         level_ = level;
+        if(level_==0) buflen=5000;
         strcpy(path_, path.data());
         maxBufsize_ = buflen;
         nexbuf_ = std::make_unique<Buff>(buflen);
         crubuf_ = std::make_unique<Buff>(buflen);
         updateFile();
         logthread_ = std::make_unique<std::thread>(Logwork(this));
-        LOG_INFO("LogSys level: %d  Logbuflen: %d", level,buflen);
+        LOG_INFO("LogSys level: %d  Logbuflen: %d", level,maxBufsize_);
     }
     static Log &getLog()
     {
@@ -227,6 +226,5 @@ public:
             if (crubuf_->size() > maxBufsize_)
                 logcond_.notify_one();
         }
-        // crubuf_->Append(str); //字符串格式
     }
 };
