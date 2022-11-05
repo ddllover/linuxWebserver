@@ -33,7 +33,7 @@ public:
             perror("listen error ");
             assert(servSocket_ >=0);
         }
-        assert(std::stoi(port) <= 65535 && std::stoi(port) >=1024);
+        //assert(std::stoi(port) <= 65535 && std::stoi(port) >=1024);
         //关闭连接相关
         struct linger optLinger = {0};
         //optLinger.l_onoff = 1;

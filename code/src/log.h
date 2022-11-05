@@ -16,13 +16,13 @@
 #include "../src/simvector.h"
 
 // 采用宏定义并不是因为变参，而是用来过滤
-#define LOG_BASE(level, format, ...)                                      \
-    {                                                                     \
-        Log &ptr = Log::getLog();                                         \
-        if (ptr.isOpen() && ptr.getLevel() <= level)                      \
-        {                                                                 \
-            ptr.append(level, __FILE__,__FUNCTION__,__LINE__, format, ##__VA_ARGS__); \
-        }                                                                 \
+#define LOG_BASE(level, format, ...)                                                    \
+    {                                                                                   \
+        Log &ptr = Log::getLog();                                                       \
+        if (ptr.isOpen() && ptr.getLevel() <= level)                                    \
+        {                                                                               \
+            ptr.append(level, __FILE__, __FUNCTION__, __LINE__, format, ##__VA_ARGS__); \
+        }                                                                               \
     }
 
 #define LOG_DEBUG(format, ...) LOG_BASE(0, format, ##__VA_ARGS__)
@@ -65,28 +65,22 @@ private:
             std::unique_lock lk(ptr->logmutex_);
             while (ptr->isOpen_)
             {
-                if (ptr->crubuf_->size() > ptr->maxBufsize_)
+                auto now = std::chrono::system_clock::now() + std::chrono::duration<double>(100);
+                ptr->logcond_.wait_until(lk, now);
+                std::swap(ptr->crubuf_, ptr->nexbuf_);
+                lk.unlock();
+                ptr->updateFile();
+                if (write(ptr->filefd_, ptr->nexbuf_->data(), ptr->nexbuf_->size()) < 0)
                 {
-                    std::swap(ptr->crubuf_, ptr->nexbuf_);
-                    lk.unlock();
-                    ptr->updateFile();
-                    if (write(ptr->filefd_, ptr->nexbuf_->data(), ptr->nexbuf_->size()) < 0)
-                    {
-                        LOG_ERROR("log write %s", strerror(errno));
-                    }
-                    if (ptr->nexbuf_->capacity() > 1.5 * ptr->maxBufsize_)
-                    {   
-                        LOG_WARN("log write over");
-                        ptr->nexbuf_->shift_to(ptr->maxBufsize_);
-                    }
-                    ptr->nexbuf_->clear();
-                    lk.lock();
+                    LOG_ERROR("log write %s", strerror(errno));
                 }
-                else
+                if (ptr->nexbuf_->capacity() > 1.5 * ptr->maxBufsize_)
                 {
-                    auto now = std::chrono::system_clock::now() + std::chrono::duration<double>(60);
-                    ptr->logcond_.wait_until(lk, now);
+                    LOG_WARN("log write over");
+                    ptr->nexbuf_->shift_to(ptr->maxBufsize_);
                 }
+                ptr->nexbuf_->clear();
+                lk.lock();
             }
         }
     };
@@ -139,7 +133,8 @@ private:
 public:
     ~Log() { shutdown(); }
     void shutdown()
-    {   LOG_INFO("Log close!");
+    {
+        LOG_INFO("Log close!");
         {
             std::lock_guard lk(logmutex_);
             isOpen_ = false;
@@ -149,17 +144,16 @@ public:
         {
             logthread_->join();
             std::lock_guard lk(logmutex_);
-            write(filefd_,crubuf_->data(),crubuf_->size());
+            write(filefd_, (void *)crubuf_->data(), (size_t)crubuf_->size());
         }
         if (filefd_ > 0)
             close(filefd_);
     }
-    void Init( int level = 4,int buflen = 100000, std::string path = "./log" )
-    {   
+    void Init(int level, int buflen = 1000000, std::string path = "./log")
+    {
         if (isOpen_)
             shutdown();
-        isOpen_=true;
-        //isOpen_ = true;
+        isOpen_ = true;
         level_ = level;
         strcpy(path_, path.data());
         maxBufsize_ = buflen;
@@ -167,7 +161,7 @@ public:
         crubuf_ = std::make_unique<Buff>(buflen);
         updateFile();
         logthread_ = std::make_unique<std::thread>(Logwork(this));
-        LOG_INFO("LogSys level: %d  buflen: %d", level,buflen);
+        LOG_INFO("LogSys level: %d  Logbuflen: %d", level, maxBufsize_);
     }
     static Log &getLog()
     {
@@ -182,7 +176,7 @@ public:
     {
         return level_;
     }
-    void append(int level, const char *filename,const char * fun, int line, const char *format, ...)
+    void append(int level, const char *filename, const char *fun, int line, const char *format, ...)
     {
 
         va_list vaList;
@@ -203,7 +197,7 @@ public:
                 crubuf_->append(filename);
                 crubuf_->append("@");
                 crubuf_->append(fun);
-                crubuf_->append("@"+std::__cxx11::to_string(line)+": ");
+                crubuf_->append("@" + std::__cxx11::to_string(line) + ": ");
                 break;
             case 1:
                 crubuf_->append("[info] : ");
@@ -227,6 +221,5 @@ public:
             if (crubuf_->size() > maxBufsize_)
                 logcond_.notify_one();
         }
-        // crubuf_->Append(str); //字符串格式
     }
 };

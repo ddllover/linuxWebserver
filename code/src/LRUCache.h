@@ -2,7 +2,6 @@
 #include <unordered_map>
 #include <mutex>
 #include <assert.h>
-using namespace std;
 
 template <typename KEY, typename VALUE>
 class LRUCache
@@ -27,7 +26,7 @@ private:
     Node Head_;
     Node Tail_;
     // list<Node> list_; // 删尾 提头
-    unordered_map<KEY, Node *> map_;
+    std::unordered_map<KEY, Node *> map_;
     std::mutex mutex_;
 
 public:

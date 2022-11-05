@@ -25,7 +25,7 @@
 
 * Linux
 * C++17
-* MySql
+* MySql: libmysqlclient-dev
 
 ## 项目启动
 

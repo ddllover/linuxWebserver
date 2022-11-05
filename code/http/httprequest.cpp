@@ -60,8 +60,9 @@ bool HttpRequest::ParseBody_(Buff &buff)
 {
     static regex patten("^\r\n([^\r\n]*)$");
     cmatch subMatch;
+    LOG_DEBUG("buff %s",buff.data());
     if (regex_search(buff.Peek(), subMatch, patten))
-    {   //LOG_DEBUG("%s",subMatch.str().data());
+    {   LOG_DEBUG("buff %s",buff.data());
         buff.PeekAdd(subMatch.length());
         body_ = subMatch[1].str();
     }

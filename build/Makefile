@@ -1,6 +1,5 @@
 CXX = g++
-CFLAGS = -std=c++20 -gdwarf-3 -O2 -Wall -g 
-#CFLAGS+=-U__FILE__ -D__FILE__='"$(subst $(dir $<),,$<)"'
+CFLAGS = -std=c++17 -O2 -Wall -g 
 
 TARGET = server
 OBJS = ../code/http/*.cpp \
