@@ -5,7 +5,7 @@
 #include <queue>
 #include <mutex>
 #include <thread>
-#include <semaphore>
+#include <semaphore.h>
 #include "../src/safequeue.h"
 class SqlConnPool
 {
@@ -44,7 +44,7 @@ public:
             assert(sql);
             sql = mysql_real_connect(sql, host, user, pwd,
                                      dbName, port, nullptr, 0);
-            assert(sql);
+            //assert(sql);
             connQue_.push(sql);
         }
         

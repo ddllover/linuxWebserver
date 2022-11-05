@@ -34,10 +34,10 @@ public:
             assert(servSocket_ >=0);
         }
         assert(std::stoi(port) <= 65535 && std::stoi(port) >=1024);
-        // ？？？关闭连接相关
+        //关闭连接相关
         struct linger optLinger = {0};
-        optLinger.l_onoff = 1;
-        optLinger.l_linger = 1;
+        //optLinger.l_onoff = 1;
+        //optLinger.l_linger = 1;
         setsockopt(servSocket_, SOL_SOCKET, SO_LINGER, &optLinger, sizeof(optLinger));
         // 端口复用
         int optval = 1;

@@ -68,15 +68,17 @@ int main(int args, char *argv[])
     // b.join();
     //mysql
     //Init("localhost", 3306, "root", "", "yourdb"); 
-    LRUCache<int,int> t(8);
+    LRUCache<int,int> t(5);
     t.put(1,1,2);
     t.put(2,2,2);
     t.put(4,5,2);
     t.put(6,6,2);
-    t.put(4,4,3);
-    auto it=t.find(4);
+    t.put(4,4,2);
+    t.find(1,true);
+    t.put(4,4,2);
+    auto it=t.begin();
     while(it!=t.end()){
-        cout<<it->key<<it->value<<it->size<<endl;
+        cout<<it->key<<it->value<<it->size<<it->cnt<<endl;
         it++;
     }
     auto end = time.now();

@@ -46,6 +46,8 @@ int HttpConn::Write()
         {
             // LOG_DEBUG("sendfile %s", sendBuff_.data());
             sendBuff_.clear();
+            sendBuff_.TryEarsePeek();
+            ResponseClear();// 发完立马清除
             break;
         }
     } while (isET || ToWriteBytes() > 10240);
@@ -56,8 +58,6 @@ bool HttpConn::ReadAndMake()
 {
     if (false == ParseRequest(rcvBuff_))
         return false;
-
-    ResponseClear();
     MakeResponse(sendBuff_);
     if (mmFile_ && mmFileStat_.st_size > 0)
     {
