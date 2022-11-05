@@ -106,7 +106,7 @@ void HttpResponse::AddContent_(Buff &buff)
     if (Cache_.find(path_,&file))
     {
         mmFile_ = file;
-        LOG_ERROR("%s Cached hit",path_.data());
+        //LOG_ERROR("%s Cached hit",path_.data());
     }
     else
     {
@@ -130,7 +130,7 @@ void HttpResponse::AddContent_(Buff &buff)
         close(srcFd);
         // 添加到缓存
         Cache_.put(path_, mmFile_, mmFileStat_.st_size);
-        LOG_ERROR("%s add cache",path_.data());
+        //LOG_ERROR("%s add cache",path_.data());
     }
     buff.append("Content-length: ");
     buff.append(to_string(mmFileStat_.st_size));
@@ -142,7 +142,7 @@ void HttpResponse::UnmapFile()
     if (mmFile_)
     {
         if (!Cache_.find(path_))
-        {   LOG_ERROR("%s Cache replace",path_.data());
+        {   //LOG_ERROR("%s Cache replace",path_.data());
             munmap(mmFile_, mmFileStat_.st_size);
         }   
     }
