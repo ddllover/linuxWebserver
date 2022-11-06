@@ -85,7 +85,9 @@ public:
     {
         return inet_ntoa(addr_.sin_addr);
     }
-
+    bool IsClose(){
+        return isClose_;
+    }
     int ToWriteBytes()
     {
         return sendFile_.size_ + (sendBuff_.peekleft());

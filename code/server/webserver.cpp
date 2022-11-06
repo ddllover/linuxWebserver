@@ -58,8 +58,11 @@ void WebServer::CloseTimeout()
             timeque_.pop();
             if (now - users_[tmp.second].timepoint_ > timeoutMS_)
             { // 确实超时 删除
-                LOG_INFO("client[%d] time out %.0f ms", tmp.second, timeoutMS_.count());
-                ClientClose(&users_[tmp.second]);
+                if (!users_[tmp.second].IsClose())
+                {
+                    LOG_INFO("client[%d] time out %.0f ms", tmp.second, timeoutMS_.count());
+                    ClientClose(&users_[tmp.second]);
+                }
             }
         }
         else
@@ -94,10 +97,13 @@ void WebServer::ClientAccept()
 void WebServer::ClientClose(HttpConn *client)
 {
     assert(client);
-    epoller_->DelFd(client->GetFd());
-    client->Close();
-    userCount_--;
-    LOG_INFO("Client[%d](%s:%d) quit, UserCount:%d", client->GetFd(), client->GetIP(), client->GetPort(), userCount_.load());
+    if (!client->IsClose())
+    {
+        epoller_->DelFd(client->GetFd());
+        client->Close();
+        userCount_--;
+        LOG_INFO("Client[%d](%s:%d) quit, UserCount:%d", client->GetFd(), client->GetIP(), client->GetPort(), userCount_.load());
+    }
 }
 
 void WebServer::ClientRcv(HttpConn *client)
