@@ -67,7 +67,7 @@ public: // 配置
         if (timeoutMS > 0)
             timeoutMS_ = std::chrono::milliseconds{timeoutMS};
         //HttpResponse::srcDir =std::filesystem::current_path().string()+"/resources/";
-        HttpResponse::srcDir="/root/linuxWebserver/resources/";
+        
         // std::string(srcDir_)+"/resources/";
         {
             LOG_INFO("========== Server init ==========");

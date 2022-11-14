@@ -148,6 +148,7 @@ string_view替换string
 
 注册系统服务
 kill -9 进程pid 强制杀死
+* nohup 命令 & ，命令脱离终端，仍然执行
 
 ## 困难
 

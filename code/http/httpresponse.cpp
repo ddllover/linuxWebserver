@@ -156,14 +156,14 @@ string_view HttpResponse::GetFileType_()
     string::size_type idx = path_.find_last_of('.');
     if (idx == string::npos)
     {
-        return "text/plain";
+        return "text/plain;charset=utf-8";
     }
     string suffix = path_.substr(idx);
     if (SUFFIX_TYPE.count(suffix) == 1)
     {
         return SUFFIX_TYPE.find(suffix)->second;
     }
-    return "text/plain";
+    return "text/plain;charset=utf-8";
 }
 
 void HttpResponse::ErrorContent(Buff &buff, string_view message)

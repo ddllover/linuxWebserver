@@ -3,6 +3,7 @@
 #include "src/log.h"
 #include <cstring>
 #include <csignal>
+#include <netdb.h>
 using namespace std;
 void signalHandler(int signum)
 {
@@ -24,11 +25,19 @@ int main(int argc, char *argv[])
         ('f' == opt) && (logflag = atoi(optarg));
         ('l' == opt) && (logrank = atoi(optarg));
     }
-    // Mysql 功能
-    SqlConnPool::Instance()->Init("localhost", 3306, "root", "", "yourdb",sqlnum); // Mysql配置 连接池数量
-    if(logflag) Log::getLog().Init( logrank, 1000000);                                // 等级越高过滤越多
+    // Mysql 先域名解析
+
+    
+    if(logflag) Log::getLog().Init( logrank, 1000000);      // 等级越高过滤越多 
+    //域名解析
+    auto t=gethostbyname("mysql");                             
+    char tmp[INET_ADDRSTRLEN]={0};
+    inet_ntop(t->h_addrtype,t->h_addr_list[0],tmp,INET_ADDRSTRLEN);
+    LOG_INFO("mysql addr: %s",tmp);
+    SqlConnPool::Instance()->Init(tmp, 3306, "", "", "yourdb",sqlnum); // Mysql配置 连接池数量
     WebServer server(threadnum);
     LOG_INFO("SqlConnPool num: %d, ThreadPool num: %d", sqlnum, threadnum);
+    HttpResponse::srcDir="/root/linuxWebserver/resources/"; //资源路径
     server.InitWebserver("0.0.0.0",to_string(port).c_str(), true, true); // port
     server.Process();
     return 0;
