@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
     }
     // Mysql 先域名解析
 
-    
+    sleep(30);
     if(logflag) Log::getLog().Init( logrank, 1000000);      // 等级越高过滤越多 
     //域名解析
     auto t=gethostbyname("mysql");                             
