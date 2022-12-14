@@ -1,7 +1,7 @@
 # WebServer
 
 用C++实现的Linux高性能服务器，经过本地webbenchh压力测试可以实现上万的QPS，并利用阿里云搭建了一个简易的网站
-[测试网站](http://123.57.36.112/)
+[测试网站](https://luklapse.top/)
 
 ## 功能
 
@@ -38,7 +38,7 @@ make
 ```
 docker:
 Dockfile文件:
-```
+```Dockerfile
 FROM ubuntu
 RUN set -x; buildDeps='g++ libmysqlclient-dev' \  
 && apt-get update \
@@ -47,7 +47,7 @@ RUN set -x; buildDeps='g++ libmysqlclient-dev' \
 && mkdir linuxWebserver
 ```
 docker-compose.yml文件:请修改相应的volumes
-```
+```yml
 version: "3.9"
 services:
   nginx:
@@ -58,82 +58,48 @@ services:
       - 443:443
     volumes:
       #挂载相对应文件，保存记录到本机
-      - /root/app/nginx/resourse:/etc/nginx/resourse
-      - /root/app/nginx/nginx.conf:/etc/nginx/nginx.conf
-      - /root/app/nginx/log:/etc/nginx/log
+      - ./nginx/nginxconfig.io:/etc/nginx/nginxconfig.io
+      - ./nginx/sites-available:/etc/nginx/sites-available
+      - ./nginx/sites-enabled:/etc/nginx/sites-enabled
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/dhparam.pem:/etc/nginx/dhparam.pem
+      #这个地方挂载你的certbot申请的证书，如果想使用其他证书请修改nginx相关的文件
+      - /etc/letsencrypt:/etc/letsencrypt 
     networks:
       - web_net
     depends_on:
       - serweb
   serweb:
     image: newweb
-    build: /root/docker
     container_name: serweb
     expose:
       - 1234
     volumes: #挂载相对应文件，保存记录到本机
-      - /root/linuxWebserver/log:/log
-      - /root/linuxWebserver/bin/server:/root/server
-      - /root/linuxWebserver/resources:/root/linuxWebserver/resources
+      - ../log:/log
+      - ../bin/server:/root/server
+      - ../resources:/root/linuxWebserver/resources
     networks:
       - web_net
-    command: ["/root/server","-p","1234"]
+    entrypoint: ["/root/server","-p","1234"]
     depends_on:
       - mysql
   mysql:
     image: mysql
     container_name: mysql
     expose: 
-      - 3306
+     - 3306
     environment:
        MYSQL_ROOT_PASSWORD: '123456'
-       MYSQL_ALLOW_EMPTY_PASSWORD: 'no'
        MYSQL_DATABASE: 'yourdb'
     volumes: #挂载相对应文件，保存记录到本机
-      - /root/app/mysql/db:/var/lib/mysql 
-      - /root/app/mysql/conf/my.cnf:/etc/my.cnf 
-      - /root/app/mysql/init:/docker-entrypoint-initdb.d   
+      - ./mysql/db:/var/lib/mysql 
     networks:
       - web_net
     command: 
-      --default-authentication-plugin=mysql_native_password #解决外部无法访问的问题
-
+      - --default-authentication-plugin=mysql_native_password #解决外部无法访问的问题
 networks:
   web_net:
 ```
-nginx配置文件nginx.conf：
-```
-#user administrator administrators;  #配置用户或者组，默认为nobody nobody。
-#worker_processes 2;  #允许生成的进程数，默认为1
-#pid /nginx/pid/nginx.pid;   #指定nginx进程运行文件存放地址
-error_log log/error.log debug;  #制定日志路径，级别。这个设置可以放入全局块，http块，server块，级别以此为：debug|info|notice|warn|error|crit|alert|emerg
-events {
-    accept_mutex on;   #设置网路连接序列化，防止惊群现象发生，默认为on
-    multi_accept on;  #设置一个进程是否同时接受多个网络连接，默认为off
-    use epoll;      #事件驱动模型，select|poll|kqueue|epoll|resig|/dev/poll|eventport
-    worker_connections  1024;    #最大连接数，默认为512
-}
-http {
-    include       mime.types;   #文件扩展名与文件类型映射表
-    default_type  application/octet-stream; #默认文件类型，默认为text/plain
-    #access_log off; #取消服务日志    
-    log_format myFormat '$remote_addr–$remote_user [$time_local] $request $status $body_bytes_sent $http_referer $http_user_agent $http_x_forwarded_for'; #自定义格式
-    access_log log/access.log myFormat;  #combined为日志格式的默认值
-    sendfile on;   #允许sendfile方式传输文件，默认为off，可以在http块，server块，location块。
-    sendfile_max_chunk 100k;  #每个进程每次调用传输数量不能大于设定的值，默认为0，即不设上限。
-    keepalive_timeout 65;  #连接超时时间，默认为75s，可以在http，server，location块。
-
-    server {
-        keepalive_requests 120; #单连接请求上限次数。
-        listen       80;   #监听端口
-        server_name  0.0.0.0;   #监听地址 
-        location  ~*^.+$ { 
-            proxy_pass http://serweb:1234; 
-        }    
-    }
-}
-```
-
 
 若想本地运行请在mian.cpp修改mysql配置，并本地配置
 ```

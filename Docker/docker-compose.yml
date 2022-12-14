@@ -1,0 +1,50 @@
+version: "3.9"
+services:
+  nginx:
+    image: nginx
+    container_name: nginx
+    ports: 
+      - 80:80
+      - 443:443
+    volumes:
+      #挂载相对应文件，保存记录到本机
+      - ./nginx/nginxconfig.io:/etc/nginx/nginxconfig.io
+      - ./nginx/sites-available:/etc/nginx/sites-available
+      - ./nginx/sites-enabled:/etc/nginx/sites-enabled
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/dhparam.pem:/etc/nginx/dhparam.pem
+      - /etc/letsencrypt:/etc/letsencrypt
+    networks:
+      - web_net
+    depends_on:
+      - serweb
+  serweb:
+    image: newweb
+    container_name: serweb
+    expose:
+      - 1234
+    volumes: #挂载相对应文件，保存记录到本机
+      - ../log:/log
+      - ../bin/server:/root/server
+      - ../resources:/root/linuxWebserver/resources
+    networks:
+      - web_net
+    entrypoint: ["/root/server","-p","1234"]
+    depends_on:
+      - mysql
+  mysql:
+    image: mysql
+    container_name: mysql
+    expose: 
+     - 3306
+    environment:
+       MYSQL_ROOT_PASSWORD: '123456'
+       MYSQL_DATABASE: 'yourdb'
+    volumes: #挂载相对应文件，保存记录到本机
+      - ./mysql/db:/var/lib/mysql 
+    networks:
+      - web_net
+    command: 
+      - --default-authentication-plugin=mysql_native_password #解决外部无法访问的问题
+networks:
+  web_net:
